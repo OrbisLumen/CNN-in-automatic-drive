@@ -1,2 +1,2 @@
-from .core import Config, Variable, Function
+from .core import Variable, Function, using_config
 from .functions import square, exp, add

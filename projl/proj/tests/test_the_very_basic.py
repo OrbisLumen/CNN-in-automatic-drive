@@ -1,7 +1,6 @@
 import pytest
 import numpy as np
-from mydezero import Variable
-from mydezero import square, exp
+from mydezero import *
 from tests.helper import numerical_diff
 
 

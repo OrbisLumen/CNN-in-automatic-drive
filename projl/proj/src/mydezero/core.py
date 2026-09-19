@@ -1,4 +1,6 @@
 import heapq
+import weakref
+import contextlib
 import numpy as np
 
 
@@ -9,9 +11,9 @@ class Config:
     that control framework behavior.
 
     Attributes:
-
+        enable_backprop (bool): Whether or not to enable backpropagation.
     """
-    pass
+    enable_backprop = True
 
 
 class Variable:
@@ -43,7 +45,7 @@ class Variable:
         self.creator = func
         self.generation = func.generation + 1
 
-    def backward(self):
+    def backward(self, retain_grad=False):
         # When being the backward startpoint, initializing the grad
         if self.grad is None:
             self.grad = np.ones_like(self.data)
@@ -67,7 +69,7 @@ class Variable:
         while funcs:
             _, _, f = heapq.heappop(funcs)
 
-            gys = [output.grad for output in f.outputs]
+            gys = [output().grad for output in f.outputs]
             gxs = f.backward(*gys)
             if not isinstance(gxs, tuple):
                 gxs = (gxs,)
@@ -81,6 +83,10 @@ class Variable:
                 if x.creator is not None:
                     add_func(x.creator)
 
+            if not retain_grad:
+                for y in f.outputs:
+                    y().grad = None
+
     def cleargrad(self):
         self.grad = None
 
@@ -92,7 +98,7 @@ class Function:
 
     Attributes:
         inputs (Iterable[Variable]): The variables this function received (storing).
-        outputs (Iterable[Variable]): The variable this function produced (storing).
+        outputs (Iterable[weakref.ref(Variable)]): The variable this function produced (storing).
         generation (int): the generation number of the function in the backpropagation graph, equal to the maximum of all the inputs' generation.
     """
 
@@ -111,11 +117,14 @@ class Function:
             ys = (ys,)
         outputs = [Variable(as_array(y)) for y in ys]
 
-        self.generation = max([x.generation for x in inputs])
-        for output in outputs:
-            output.set_creator(self)  # save creator in every output
-        self.inputs = inputs
-        self.outputs = outputs
+        # only auto graph when require backprop
+        if Config.enable_backprop:
+            self.generation = max([x.generation for x in inputs])
+            for output in outputs:
+                output.set_creator(self)  # save creator in every output
+            self.inputs = inputs
+            self.outputs = [weakref.ref(output) for output in outputs]
+
         return outputs if len(outputs) > 1 else outputs[0]
 
     def forward(self, xs):
@@ -133,3 +142,12 @@ def as_array(x):
     if np.isscalar(x):
         return np.array(x)
     return x
+
+@contextlib.contextmanager
+def using_config(name, value):
+    old_value = getattr(Config, name)
+    setattr(Config, name, value)
+    try:
+        yield
+    finally:
+        setattr(Config, name, old_value)

@@ -1,7 +1,6 @@
 import pytest
 import numpy as np
-from mydezero import Variable
-from mydezero import add, square
+from mydezero import *
 
 
 def test_basic_add():
