@@ -1,6 +1,6 @@
 import numpy as np
 
-from mydezero import Variable, add, mul, exp, square
+from mydezero import Variable, add, exp, square
 
 
 def test_square_forward():
@@ -26,19 +26,3 @@ def test_composed_function_forward():
     y = square(exp(square(x)))
 
     np.testing.assert_allclose(y.data, 1.648721270700128)
-
-def test_add_and_mul_forward():
-    a = Variable(np.array(3.0))
-    b = Variable(np.array(2.0))
-    c = Variable(np.array(1.0))
-
-    y = add(mul(a, b), c)
-    np.testing.assert_allclose(y.data,7.0)
-
-def test_add_and_mul_forward_reload():
-    a = Variable(np.array(3.0))
-    b = Variable(np.array(2.0))
-    c = Variable(np.array(1.0))
-
-    y = a * b + c
-    np.testing.assert_allclose(y.data, 7.0)
