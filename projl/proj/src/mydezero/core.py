@@ -4,6 +4,10 @@ import contextlib
 import numpy as np
 
 
+# =============================================================================
+# Config
+# =============================================================================
+
 class Config:
     """Stores global configuration options for the framework.
 
@@ -15,6 +19,20 @@ class Config:
     """
     enable_backprop = True
 
+
+@contextlib.contextmanager
+def using_config(name, value):
+    old_value = getattr(Config, name)
+    setattr(Config, name, value)
+    try:
+        yield
+    finally:
+        setattr(Config, name, old_value)
+
+
+# =============================================================================
+# Variable, Function
+# =============================================================================
 
 class Variable:
     """Represents a variable in a computational graph.
@@ -72,6 +90,12 @@ class Variable:
         p = str(self.data).replace('\n', '\n' + ' ' * 9)
         return 'variable(' + p + ')'
 
+    def __mul__(self, other):
+        return mul(self, other)
+
+    def __add__(self, other):
+        return add(self, other)
+
     def set_creator(self, func):
         self.creator = func
         self.generation = func.generation + 1
@@ -122,6 +146,23 @@ class Variable:
         self.grad = None
 
 
+def as_array(x):
+    """Converts a numpy scalar to a numpy array.
+
+    Also check for python int and float and convert it to a numpy array.
+    """
+    if np.isscalar(x):
+        return np.array(x)
+    return x
+
+
+def as_variable(obj):
+    """Converts a numpy array to a Variable."""
+    if isinstance(obj, Variable):
+        return obj
+    return Variable(obj)
+
+
 class Function:
     """Base class differentiable functions.
 
@@ -142,6 +183,8 @@ class Function:
             Variable | list[Variable]: A single output variable if there is only one
                 output; otherwise, a list of output variables.
         """
+        inputs = [as_variable(x) for x in inputs]
+
         xs = [x.data for x in inputs]
         ys = self.forward(*xs)
         if not isinstance(ys, tuple):
@@ -165,21 +208,34 @@ class Function:
         raise NotImplementedError
 
 
-def as_array(x):
-    """Converts a numpy scalar to a numpy array.
+# =============================================================================
+# Arithmetic
+# =============================================================================
 
-    Also check for python int and float and convert it to a numpy array.
-    """
-    if np.isscalar(x):
-        return np.array(x)
-    return x
+class Add(Function):
+    """Computes addition of the two input."""
+
+    def forward(self, x0, x1):
+        y = x0 + x1
+        return y
+
+    def backward(self, gy):
+        return gy, gy
 
 
-@contextlib.contextmanager
-def using_config(name, value):
-    old_value = getattr(Config, name)
-    setattr(Config, name, value)
-    try:
-        yield
-    finally:
-        setattr(Config, name, old_value)
+def add(x0, x1): return Add()(x0, x1)
+
+
+class Mul(Function):
+    """Computes multiplication of the two input."""
+
+    def forward(self, x0, x1):
+        y = x0 * x1
+        return y
+
+    def backward(self, gy):
+        x0, x1 = self.inputs[0].data, self.inputs[1].data
+        return gy * x1, gy * x0
+
+
+def mul(x0, x1): return Mul()(x0, x1)

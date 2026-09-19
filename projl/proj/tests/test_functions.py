@@ -34,3 +34,11 @@ def test_add_and_mul_forward():
 
     y = add(mul(a, b), c)
     np.testing.assert_allclose(y.data,7.0)
+
+def test_add_and_mul_forward_reload():
+    a = Variable(np.array(3.0))
+    b = Variable(np.array(2.0))
+    c = Variable(np.array(1.0))
+
+    y = a * b + c
+    np.testing.assert_allclose(y.data, 7.0)
