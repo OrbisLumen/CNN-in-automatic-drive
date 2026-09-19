@@ -1,6 +1,6 @@
 import numpy as np
 
-from mydezero import Variable, add, exp, square
+from mydezero import Variable, add, exp, square, mul
 from tests.helpers import numerical_diff
 
 
@@ -85,3 +85,15 @@ def test_backward_discards_intermediate_gradients_by_default():
     assert intermediate.grad is None
     np.testing.assert_allclose(x0.grad, 2.0)
     np.testing.assert_allclose(x1.grad, 1.0)
+
+def test_mul_function_backward():
+
+    a = Variable(np.array(3.0))
+    b = Variable(np.array(2.0))
+    c = Variable(np.array(1.0))
+
+    y = add(mul(a, b), c)
+    y.backward()
+
+    np.testing.assert_allclose(a.grad, 2.0)
+    np.testing.assert_allclose(b.grad, 3.0)
