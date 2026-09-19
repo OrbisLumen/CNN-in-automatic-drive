@@ -1,5 +1,4 @@
 import numpy as np
-
 from mydezero.core import Function, Variable
 
 
@@ -10,7 +9,7 @@ class Square(Function):
         return x ** 2
 
     def backward(self, gy):
-        x = self.input.data
+        x = self.inputs[0].data
         gx = 2 * gy * x
         return gx
 
@@ -22,29 +21,29 @@ class Exp(Function):
         return np.exp(x)
 
     def backward(self, gy):
-        x = self.input.data
+        x = self.inputs[0].data
         gx = np.exp(x) * gy
         return gx
 
 
+class Add(Function):
+    """Computes addition to all the input."""
+
+    def forward(self, x0, x1):
+        y = x0 + x1
+        return y
+
+    def backward(self,gy):
+        return gy, gy
+
+
 def square(x):
-    """Computes the element-wise square of the input.
-
-    Args:
-        x (Variable): Input value to be squared.
-
-    Returns:
-        Variable: A variable containing the element-wise square of the input.
-    """
     return Square()(x)
 
 
 def exp(x):
-    """Computes the element-wise exponential of the input.
-
-    Args:
-        x (Variable): Input value to be squared.
-    Returns:
-        Variable: A variable containing the element-wise square of the input.
-    """
     return Exp()(x)
+
+
+def add(x0, x1):
+    return Add()(x0, x1)
