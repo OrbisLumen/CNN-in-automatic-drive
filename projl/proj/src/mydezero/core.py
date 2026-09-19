@@ -25,21 +25,52 @@ class Variable:
 
     Attributes:
         data (np.ndarray): Numerical data stored in a numpy array.
+        name (str): Name of the variable.
         grad (np.ndarray): Numerical gradient stored in a numpy array when back propagated.
         creator (Function): Function used to create the variable.
         generation (int): the generation number of the variable in the backpropagation graph.
+        shape (np.ndarray.shape): Shape of the variable.
+        ndim (np.ndarray.ndim): Dimension of the variable.
+        size (np.ndarray.size): Size of the variable.
+        dtype (np.ndarray.dtype): Data type of the variable.
     """
 
-    def __init__(self, data):
+    def __init__(self, data, name=None):
         # check input for numpy.ndarray
         if data is not None:
             if not isinstance(data, np.ndarray):
                 raise TypeError(f"{type(data)} is not supported, data must be a numpy array.")
 
         self.data = data
+        self.name = name
         self.grad = None
         self.creator = None
         self.generation = 0
+
+    @property
+    def shape(self):
+        return self.data.shape
+
+    @property
+    def ndim(self):
+        return self.data.ndim
+
+    @property
+    def size(self):
+        return self.data.size
+
+    @property
+    def dtype(self):
+        return self.data.dtype
+
+    def __len__(self):
+        return len(self.data)
+
+    def __repr__(self):
+        if self.data is None:
+            return 'variable(None)'
+        p = str(self.data).replace('\n', '\n' + ' ' * 9)
+        return 'variable(' + p + ')'
 
     def set_creator(self, func):
         self.creator = func
@@ -142,6 +173,7 @@ def as_array(x):
     if np.isscalar(x):
         return np.array(x)
     return x
+
 
 @contextlib.contextmanager
 def using_config(name, value):
