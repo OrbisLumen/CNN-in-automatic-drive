@@ -1,6 +1,8 @@
 import numpy as np
 
-from mydezero import Variable, add, exp, square, mul
+from mydezero import Variable
+from mydezero.core import add, mul
+from mydezero.functions import exp, square
 from tests.helpers import numerical_diff
 
 

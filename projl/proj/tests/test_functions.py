@@ -1,6 +1,8 @@
 import numpy as np
 
-from mydezero import Variable, add, exp, square
+from mydezero import Variable
+from mydezero.core import add
+from mydezero.functions import exp, square
 
 
 def test_square_forward():

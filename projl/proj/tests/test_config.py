@@ -1,6 +1,7 @@
 import numpy as np
 
-from mydezero import Variable, square, using_config
+from mydezero import Variable, using_config
+from mydezero.functions import exp, square
 
 
 def test_disabling_backprop_does_not_create_graph():
