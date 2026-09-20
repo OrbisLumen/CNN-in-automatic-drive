@@ -7,6 +7,7 @@ from mydezero.core import as_variable
 from mydezero.core import setup_variable
 
 import mydezero.functions
+import mydezero.utils
 
 
 setup_variable()
