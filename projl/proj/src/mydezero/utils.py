@@ -8,6 +8,7 @@ from mydezero import Variable
 # graphviz visualization
 # =============================================================================
 def _dot_var(v, verbose=False):
+    """Helper function for get_dot_graph, to generate the variable node"""
     dot_var = '{} [label="{}", color=orange, style=filled]\n'
 
     name = '' if v.name is None else v.name
@@ -19,6 +20,7 @@ def _dot_var(v, verbose=False):
 
 
 def _dot_func(f):
+    """Helper function for get_dot_graph, to generate the function node and connect"""
     dot_func = '{} [label="{}", color=lightblue, style=filled, shape=box]\n'
     txt = dot_func.format(id(f), f.__class__.__name__)
 
@@ -31,6 +33,16 @@ def _dot_func(f):
 
 
 def get_dot_graph(output, verbose=True):
+    """Generate the dot graph as a whole, not api function.
+
+    Since the graphviz just need connection, no request of order,
+    only using the seen_set() is just okay, in contrast to backward
+
+    Parameters:
+        output (Variable): The final output of a computation.
+        verbose (bool): True to add var name, shape and dtype information.
+
+    """
     txt = ''
     funcs = []
     seen_set = set()
@@ -55,6 +67,19 @@ def get_dot_graph(output, verbose=True):
 
 
 def plot_dot_graph(output, verbose=True, to_file='graph.png'):
+    """Generate the dot graph as a whole.
+
+    The function to generalize a graphviz picture and show in the jupyter notebook if opened.
+
+    Temp files are stored in proj/draft, all the graph share a single temp.dot,
+    you must ensure not using it too frequently when you need to see the source file.
+    But the real picture styled file will be named by you, so don't worry the conflict.
+
+    Parameters:
+        output (Variable): The final output of a computation.
+        verbose (bool): True to add var name, shape and dtype information in the var node.
+        to_file (str): graph file name with extension (must add the target extension!!!).
+    """
 
     dot_graph = get_dot_graph(output, verbose)
 
