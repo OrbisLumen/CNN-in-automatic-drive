@@ -1,5 +1,8 @@
+from pathlib import Path
+import subprocess
 import numpy as np
 from mydezero import Variable
+
 
 # =============================================================================
 # graphviz visualization
@@ -14,6 +17,7 @@ def _dot_var(v, verbose=False):
         name += str(v.shape) + ' ' + str(v.dtype)
     return dot_var.format(id(v), name)
 
+
 def _dot_func(f):
     dot_func = '{} [label="{}", color=lightblue, style=filled, shape=box]\n'
     txt = dot_func.format(id(f), f.__class__.__name__)
@@ -22,8 +26,9 @@ def _dot_func(f):
     for x in f.inputs:
         txt += dot_edge.format(id(x), id(f))
     for y in f.outputs:
-        txt += dot_edge.format(id(f), id(y))
+        txt += dot_edge.format(id(f), id(y()))  # y is weakref
     return txt
+
 
 def get_dot_graph(output, verbose=True):
     txt = ''
@@ -49,10 +54,26 @@ def get_dot_graph(output, verbose=True):
     return 'digraph G {\n' + txt + '\n}'
 
 
+def plot_dot_graph(output, verbose=True, to_file='graph.png'):
 
-if __name__ == "__main__":
-    x0 = Variable(np.array(1.0))
-    x1 = Variable(np.array(1.0))
-    y = x0 + x1
+    dot_graph = get_dot_graph(output, verbose)
 
-    print(get_dot_graph(y, verbose=True))
+    project_root = Path(__file__).resolve().parents[2]
+    draft_dir = project_root / "draft"
+    draft_dir.mkdir(exist_ok=True)
+
+    graph_path = draft_dir / "temp.dot"
+    output_path = draft_dir / to_file
+
+    graph_path.write_text(dot_graph)
+
+    extension = output_path.suffix[1:]
+
+    subprocess.run(['dot', str(graph_path), '-T' + extension, '-o', str(output_path)])
+
+    # Return the image as a Jupyter Image object, to be displayed in-line.
+    try:
+        from IPython import display
+        return display.Image(filename=str(output_path))
+    except:
+        pass
