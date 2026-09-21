@@ -12,7 +12,7 @@ def test_composed_function_backward():
 
     y.backward()
 
-    np.testing.assert_allclose(x.grad, 3.297442541400256)
+    np.testing.assert_allclose(x.grad.data, 3.297442541400256)
 
 
 def test_backward_respects_initial_output_gradient():
@@ -22,7 +22,7 @@ def test_backward_respects_initial_output_gradient():
 
     y.backward()
 
-    np.testing.assert_allclose(x.grad, 3.297442541400256)
+    np.testing.assert_allclose(x.grad.data, 3.297442541400256)
 
 
 def test_square_backward_matches_numerical_gradient():
@@ -31,7 +31,7 @@ def test_square_backward_matches_numerical_gradient():
 
     y.backward()
 
-    np.testing.assert_allclose(x.grad, numerical_diff(square, x))
+    np.testing.assert_allclose(x.grad.data, numerical_diff(square, x))
 
 
 def test_add_and_square_backward():
@@ -42,8 +42,8 @@ def test_add_and_square_backward():
     y.backward()
 
     np.testing.assert_allclose(y.data, 13.0)
-    np.testing.assert_allclose(x0.grad, 4.0)
-    np.testing.assert_allclose(x1.grad, 6.0)
+    np.testing.assert_allclose(x0.grad.data, 4.0)
+    np.testing.assert_allclose(x1.grad.data, 6.0)
 
 
 def test_reused_variable_accumulates_gradient():
@@ -52,7 +52,7 @@ def test_reused_variable_accumulates_gradient():
 
     y.backward()
 
-    np.testing.assert_allclose(x.grad, 2.0)
+    np.testing.assert_allclose(x.grad.data, 2.0)
 
 
 def test_reused_variable_accumulates_gradient_across_multiple_adds():
@@ -61,7 +61,7 @@ def test_reused_variable_accumulates_gradient_across_multiple_adds():
 
     y.backward()
 
-    np.testing.assert_allclose(x.grad, 3.0)
+    np.testing.assert_allclose(x.grad.data, 3.0)
 
 
 def test_branching_graph_backward():
@@ -72,7 +72,7 @@ def test_branching_graph_backward():
     y.backward()
 
     np.testing.assert_allclose(y.data, 32.0)
-    np.testing.assert_allclose(x.grad, 64.0)
+    np.testing.assert_allclose(x.grad.data, 64.0)
 
 
 def test_backward_discards_intermediate_gradients_by_default():
@@ -85,8 +85,8 @@ def test_backward_discards_intermediate_gradients_by_default():
 
     assert y.grad is None
     assert intermediate.grad is None
-    np.testing.assert_allclose(x0.grad, 2.0)
-    np.testing.assert_allclose(x1.grad, 1.0)
+    np.testing.assert_allclose(x0.grad.data, 2.0)
+    np.testing.assert_allclose(x1.grad.data, 1.0)
 
 def test_mul_function_backward():
 
@@ -97,5 +97,5 @@ def test_mul_function_backward():
     y = add(mul(a, b), c)
     y.backward()
 
-    np.testing.assert_allclose(a.grad, 2.0)
-    np.testing.assert_allclose(b.grad, 3.0)
+    np.testing.assert_allclose(a.grad.data, 2.0)
+    np.testing.assert_allclose(b.grad.data, 3.0)

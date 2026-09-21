@@ -72,8 +72,8 @@ def test_div_and_rdiv():
 
     z = x / y
     z.backward()
-    assert x.grad == 1.0
-    assert y.grad == -2.0
+    assert x.grad.data == 1.0
+    assert y.grad.data == -2.0
     assert z.data == 2.0
 
 
@@ -82,4 +82,4 @@ def test_pow():
     y = x ** 3
     y.backward()
     assert y.data == 8.0
-    assert x.grad == 12.0
+    assert x.grad.data == 12.0
