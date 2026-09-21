@@ -14,7 +14,16 @@ projl/proj/
 └── README.md
 ```
 
-## Running Tests
+## Get Started
+Run the following command first from the `projl/proj` directory.
+
+```bash
+pip3 install -e .
+```
+
+This make sure the jupyter and others know which package is mydezero.
+
+## Run Tests
 
 Run the tests from the `projl/proj` directory:
 
