@@ -1,17 +1,19 @@
 # Reference materials
 reference/
 
-# Jupyter
-.ipynb_checkpoints/ 
-
-# Python
-__pycache__/
-.pytest_cache/
-*.pyc
-.venv
-
 # Big data
 data/
+draft/
+
+# Python
+.venv
+*.pyc
+__pycache__/
+.pytest_cache/
+*.egg-info
+
+# Jupyter
+.ipynb_checkpoints/ 
 
 # Pycharm
 .idea
