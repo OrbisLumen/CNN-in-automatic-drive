@@ -83,3 +83,19 @@ def test_pow():
     y.backward()
     assert y.data == 8.0
     assert x.grad.data == 12.0
+
+def test_second_order_derivative():
+
+    def f(x):
+        y = x ** 4 - 2 * x ** 2
+        return y
+
+    x = Variable(np.array(2.0))
+    y = f(x)
+    y.backward(create_graph=True)
+    assert x.grad.data == 24.0
+
+    gx = x.grad
+    gx.backward()
+    assert x.grad.data == 68.0
+

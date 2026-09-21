@@ -138,9 +138,9 @@ class Variable:
                     if x.creator is not None:
                         add_func(x.creator)
 
-                if not retain_grad:
-                    for y in f.outputs:
-                        y().grad = None
+            if not retain_grad:
+                for y in f.outputs:
+                    y().grad = None
 
     def cleargrad(self):
         self.grad = None
@@ -307,7 +307,7 @@ class Pow(Function):
         return y
 
     def backward(self, gy):
-        x = self.inputs[0].data
+        x = self.inputs[0]
         exponent = self.exponent
         gx = exponent * x ** (exponent - 1) * gy
         return gx
