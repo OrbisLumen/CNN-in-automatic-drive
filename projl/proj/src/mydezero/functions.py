@@ -1,5 +1,5 @@
 import numpy as np
-from mydezero.core import Function, Variable
+from mydezero.core import Function
 
 
 # =============================================================================
@@ -13,7 +13,7 @@ class Square(Function):
         return x ** 2
 
     def backward(self, gy):
-        x = self.inputs[0]
+        x, = self.inputs
         gx = 2 * gy * x
         return gx
 
@@ -25,7 +25,7 @@ class Exp(Function):
         return np.exp(x)
 
     def backward(self, gy):
-        x = self.inputs[0]
+        x, = self.inputs
         gx = np.exp(x.data) * gy
         return gx
 
@@ -63,12 +63,23 @@ class Sin(Function):
         return y
 
     def backward(self, gy):
-        x = self.inputs[0].data
-        gx = gy * np.cos(x)
+        x, = self.inputs
+        gx = gy * cos(x)
         return gx
 
 def sin(x): return Sin()(x)
 
+class Cos(Function):
+    def forward(self, x):
+        y = np.cos(x)
+        return y
+
+    def backward(self, gy):
+        x, = self.inputs
+        gx = gy * -sin(x)
+        return gx
+
+def cos(x): return Cos()(x)
 
 
 
