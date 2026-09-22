@@ -99,3 +99,17 @@ def test_second_order_derivative():
     gx.backward()
     assert x.grad.data == 68.0
 
+def test_tensor_basic():
+    x = Variable(np.array([[1,2,3],[4,5,6]]))
+    c = Variable(np.array([[10,20,30],[40,50,60]]))
+    t = x + c
+    expected = np.array([[11,22,33],[44,55,66]])
+
+    assert np.array_equal(t.data, expected)
+
+def test_reshape_basic():
+    x = Variable(np.array([[1,2,3], [4,5,6]]))
+    y = x.reshape((6,))
+    y.backward(retain_grad = True)
+
+    assert np.array_equal(x.grad.data, np.array([[1,1,1],[1,1,1]]))

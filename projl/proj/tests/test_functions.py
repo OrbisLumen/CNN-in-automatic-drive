@@ -53,3 +53,25 @@ def test_sin_higher_order_derivative():
     np.testing.assert_allclose(grads[0], -0.8414709848078965)
     np.testing.assert_allclose(grads[1], -0.5403023058681398)
     np.testing.assert_allclose(grads[2], 0.8414709848078965)
+
+def test_tanh_basic():
+    x = Variable(np.array(2.0))
+    y = F.tanh(x)
+    y.backward()
+
+    np.testing.assert_allclose(x.grad.data, 0.07065082)
+    np.testing.assert_allclose(y.data, 0.96402758)
+
+def test_reshape_basic():
+    x = Variable(np.array([[1,2,3], [4,5,6]]))
+    y = F.reshape(x, (6,))
+    y.backward(retain_grad = True)
+
+    assert np.array_equal(x.grad.data, np.array([[1,1,1],[1,1,1]]))
+
+def test_transpose_basic():
+    x = Variable(np.array([[1,2,3], [4,5,6]]))
+    y = F.transpose(x)
+    y.backward()
+
+    assert np.array_equal(x.grad.data, np.array([[1,1,1], [1,1,1]]))

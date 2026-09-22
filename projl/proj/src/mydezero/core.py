@@ -2,6 +2,7 @@ import heapq
 import weakref
 import contextlib
 import numpy as np
+import mydezero
 
 
 # =============================================================================
@@ -145,6 +146,24 @@ class Variable:
     def cleargrad(self):
         self.grad = None
 
+    def reshape(self, *shape):
+        if len(shape) == 1 and isinstance(shape[0], (tuple, list)):
+            shape = shape[0]
+        return mydezero.functions.reshape(self, shape)
+
+    def transpose(self, *axes):
+        if len(axes) == 0:
+            axes = None
+        elif len(axes) == 1:
+            if isinstance(axes, (tuple, list)) or axes[0] is None:
+                axes = axes[0]
+        return mydezero.functions.transpose(self, axes)
+
+
+    @property
+    def T(self):
+        return mydezero.functions.transpose(self)
+
 
 def as_array(x):
     """Converts a numpy scalar to a numpy array.
@@ -202,6 +221,14 @@ class Function:
         return outputs if len(outputs) > 1 else outputs[0]
 
     def forward(self, xs):
+        """Forward propagation.
+
+        Arguments:
+            *xs (np.ndarray): One or more input array(s).
+
+        Returns:
+            np.ndarray | tuple[np.ndarray, ...]: Output array(s).
+        """
         raise NotImplementedError
 
     def backward(self, gys):
