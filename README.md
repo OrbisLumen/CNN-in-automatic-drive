@@ -21,3 +21,13 @@ proj*/
 └── work/       # Completed and in-progress work
     ├── hw*/    # Homework assignments
 ```
+
+## Set up
+
+All the three project uses python now. It is better to create a venv in the main directory first.
+
+The package as follows is in use
+  - numpy
+  - jupyter
+  - matplotlib
+  - pytest 
