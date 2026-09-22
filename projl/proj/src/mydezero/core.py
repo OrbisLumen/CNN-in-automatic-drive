@@ -155,7 +155,7 @@ class Variable:
         if len(axes) == 0:
             axes = None
         elif len(axes) == 1:
-            if isinstance(axes, (tuple, list)) or axes[0] is None:
+            if isinstance(axes[0], (tuple, list)) or axes[0] is None:
                 axes = axes[0]
         return mydezero.functions.transpose(self, axes)
 
