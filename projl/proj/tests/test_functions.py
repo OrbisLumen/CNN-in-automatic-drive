@@ -38,6 +38,7 @@ def test_basic_sin():
     np.testing.assert_allclose(y.data, 0.7071067811865476)
     np.testing.assert_allclose(x.grad.data, 0.7071067811865476)
 
+
 def test_sin_higher_order_derivative():
     x = Variable(np.array(1.0))
     y = F.sin(x)
@@ -54,6 +55,7 @@ def test_sin_higher_order_derivative():
     np.testing.assert_allclose(grads[1], -0.5403023058681398)
     np.testing.assert_allclose(grads[2], 0.8414709848078965)
 
+
 def test_tanh_basic():
     x = Variable(np.array(2.0))
     y = F.tanh(x)
@@ -62,16 +64,51 @@ def test_tanh_basic():
     np.testing.assert_allclose(x.grad.data, 0.07065082)
     np.testing.assert_allclose(y.data, 0.96402758)
 
-def test_reshape_basic():
-    x = Variable(np.array([[1,2,3], [4,5,6]]))
-    y = F.reshape(x, (6,))
-    y.backward(retain_grad = True)
 
-    assert np.array_equal(x.grad.data, np.array([[1,1,1],[1,1,1]]))
+def test_reshape_basic():
+    x = Variable(np.array([[1, 2, 3], [4, 5, 6]]))
+    y = F.reshape(x, (6,))
+    y.backward(retain_grad=True)
+
+    assert np.array_equal(x.grad.data, np.array([[1, 1, 1], [1, 1, 1]]))
+
 
 def test_transpose_basic():
-    x = Variable(np.array([[1,2,3], [4,5,6]]))
+    x = Variable(np.array([[1, 2, 3], [4, 5, 6]]))
     y = F.transpose(x)
     y.backward()
 
-    assert np.array_equal(x.grad.data, np.array([[1,1,1], [1,1,1]]))
+    assert np.array_equal(x.grad.data, np.array([[1, 1, 1], [1, 1, 1]]))
+
+
+def test_sum_basic():
+    x = Variable(np.array([[1, 2, 3], [4, 5, 6]]))
+    y = F.sum(x, axis=0)
+    y.backward()
+
+    assert np.array_equal(y.data, np.array([5, 7, 9]))
+    assert np.array_equal(x.grad.data, np.array([[1, 1, 1], [1, 1, 1]]))
+
+    x = Variable(np.random.randn(2, 3, 4, 5))
+    y = x.sum(keepdims=True)
+    assert y.shape == (1, 1, 1, 1)
+
+
+def test_sum_to_basic():
+    x = np.array([[1, 2, 3], [4, 5, 6]])
+    y = F.sum_to(x, (1, 3))
+    z = F.sum_to(x, (2, 1))
+
+    assert np.array_equal(y.data, np.array([[5, 7, 9]]))
+    assert np.array_equal(z.data, np.array([[6], [15]]))
+
+
+def test_matmul_basic():
+    x = Variable(np.array([[1, 2, 3], [4, 5, 6]]))
+    W = Variable(np.array([[1, 2], [3, 4], [5, 6]]))
+    y = F.matmul(x, W)
+    y.backward()
+
+    assert np.array_equal(y.data, np.array([[22, 28], [49, 64]]))
+    assert np.array_equal(x.grad.data, np.array([[3, 7, 11], [3, 7, 11]]))
+    assert np.array_equal(W.grad.data, np.array([[5, 5], [7, 7], [9, 9]]))
