@@ -18,6 +18,9 @@ class Square(Function):
         return gx
 
 
+def square(x): return Square()(x)
+
+
 class Exp(Function):
 
     def forward(self, x):
@@ -27,9 +30,6 @@ class Exp(Function):
         x, = self.inputs
         gx = np.exp(x.data) * gy
         return gx
-
-
-def square(x): return Square()(x)
 
 
 def exp(x): return Exp()(x)
@@ -254,6 +254,7 @@ def matmul(x, W):
 
 class Linear(Function):
     """basic linear layer function"""
+
     def forward(self, x, W, b):
         y = x.dot(W)
         if b is not None:
@@ -292,3 +293,27 @@ class MeanSquaredError(Function):
 
 def mean_squared_error(x0, x1):
     return MeanSquaredError()(x0, x1)
+
+
+# =============================================================================
+# activation function: sigmoid
+# =============================================================================
+
+def sigmoid_simple(x):
+    x = as_variable(x)
+    y = 1 / (1 + exp(-x))
+    return y
+
+
+class Sigmoid(Function):
+    def forward(self, x):
+        y = 1 / (1 + np.exp(-x))
+        return y
+
+    def backward(self, gy):
+        y = self.outputs[0]()
+        gx = gy * y * (1 - y)
+        return gx
+
+
+def sigmoid(x): return Sigmoid()(x)
