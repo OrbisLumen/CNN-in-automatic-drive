@@ -2,6 +2,8 @@
 
 from pathlib import Path
 import subprocess
+import numpy as np
+
 
 # =============================================================================
 # graphviz visualization
@@ -180,3 +182,22 @@ def reshape_sum_backward(gy, x_shape, axis, keepdims):
 
     gy = gy.reshape(shape)  # reshape
     return gy
+
+
+def logsumexp(x, axis=1):
+    m = x.max(axis=axis, keepdims=True)
+    y = x - m
+    np.exp(y, out=y)
+    s = y.sum(axis=axis, keepdims=True)
+    np.log(s, out=s)
+    m += s
+    return m
+
+
+def max_backward_shape(x, axis):
+    if axis is None:
+        return (1,) * x.ndim
+    if isinstance(axis, (int, np.integer)):
+        axis = (axis,)
+    axes = tuple(a + x.ndim if a < 0 else a for a in axis)
+    return tuple(1 if i in axes else size for i, size in enumerate(x.shape))

@@ -517,7 +517,7 @@ def linear(x, W, b=None):
 
 
 # =============================================================================
-# loss_functions: mean_squared_error
+# loss_functions: mean_squared_error, softmax_cross_entropy
 # =============================================================================
 
 class MeanSquaredError(Function):
@@ -551,6 +551,38 @@ def mean_squared_error(x0, x1):
         Variable: Scalar loss normalized by N, not by the total element count.
     """
     return MeanSquaredError()(x0, x1)
+
+
+class SoftmaxCrossEntropy(Function):
+    def forward(self, x, t):
+        if x.ndim != 2 or 0 in x.shape:
+            raise ValueError('x must have nonempty shape (N, C)')
+        N = x.shape[0]
+        if t.shape not in ((N,), (N, 1)):
+            raise ValueError('t must have shape (N,) or (N, 1)')
+        if not np.issubdtype(t.dtype, np.integer):
+            raise TypeError('t must contain integer class indices')
+        labels = t.ravel()
+        if np.any(labels < 0) or np.any(labels >= x.shape[1]):
+            raise ValueError('class indices must be in [0, C)')
+        shifted = x - x.max(axis=1, keepdims=True)
+        log_p = shifted - utils.logsumexp(shifted, axis=1)
+        return -log_p[np.arange(N), labels].mean()
+
+    def backward(self, gy):
+        x, t = self.inputs
+        N, CLS_NUM = x.shape
+
+        gy = gy / np.array(N, dtype=x.dtype)
+        y = softmax(x)
+
+        t_onehot = np.eye(CLS_NUM, dtype=x.dtype)[t.data.ravel()]
+        y = (y - t_onehot) * gy
+        return y
+
+
+def softmax_cross_entropy_loss(x, t):
+    return SoftmaxCrossEntropy()(x, t)
 
 
 # =============================================================================
@@ -600,3 +632,83 @@ def sigmoid(x):
         Variable: Elementwise result with the same shape as x.
     """
     return Sigmoid()(x)
+
+
+class Softmax(Function):
+    def __init__(self, axis=1):
+        self.axis = axis
+
+    def forward(self, x):
+        y = x - x.max(axis=self.axis, keepdims=True)
+        y = np.exp(y)
+        y /= y.sum(axis=self.axis, keepdims=True)
+        return y
+
+    def backward(self, gy):
+        y = self.outputs[0]()
+        gx = y * gy
+        sumdx = gx.sum(axis=self.axis, keepdims=True)
+        gx -= y * sumdx
+        return gx
+
+
+def softmax(x, axis=1):
+    return Softmax(axis)(x)
+
+
+# =============================================================================
+# max / min / clip
+# =============================================================================
+class Max(Function):
+    def __init__(self, axis=None, keepdims=False):
+        self.axis = axis
+        self.keepdims = keepdims
+
+    def forward(self, x):
+        y = x.max(axis=self.axis, keepdims=self.keepdims)
+        return y
+
+    def backward(self, gy):
+        x = self.inputs[0]
+        y = self.outputs[0]()  # weakref
+
+        shape = utils.max_backward_shape(x, self.axis)
+        gy = reshape(gy, shape)
+        y = reshape(y, shape)
+        cond = (x.data == y.data)
+        gy = broadcast_to(gy, cond.shape)
+        return gy * cond
+
+
+class Min(Max):
+    def forward(self, x):
+        y = x.min(axis=self.axis, keepdims=self.keepdims)
+        return y
+
+
+def max(x, axis=None, keepdims=False):
+    return Max(axis, keepdims)(x)
+
+
+def min(x, axis=None, keepdims=False):
+    return Min(axis, keepdims)(x)
+
+
+class Clip(Function):
+    def __init__(self, x_min, x_max):
+        self.x_min = x_min
+        self.x_max = x_max
+
+    def forward(self, x):
+        y = np.clip(x, self.x_min, self.x_max)
+        return y
+
+    def backward(self, gy):
+        x, = self.inputs
+        mask = (x.data >= self.x_min) * (x.data <= self.x_max)
+        gx = gy * mask
+        return gx
+
+
+def clip(x, x_min, x_max):
+    return Clip(x_min, x_max)(x)
