@@ -185,6 +185,17 @@ def reshape_sum_backward(gy, x_shape, axis, keepdims):
 
 
 def logsumexp(x, axis=1):
+    """Compute a stable NumPy log-sum-exp while keeping reduced dimensions.
+
+    Args:
+        x (np.ndarray): Finite floating-point input values.
+        axis (int, tuple[int, ...], or None): Reduction axes. Defaults to 1.
+
+    Returns:
+        np.ndarray: Logarithm of the summed exponentials, with reduced axes
+            retained as size one. The input is not modified. This NumPy helper
+            does not record an automatic differentiation graph.
+    """
     m = x.max(axis=axis, keepdims=True)
     y = x - m
     np.exp(y, out=y)
@@ -195,6 +206,16 @@ def logsumexp(x, axis=1):
 
 
 def max_backward_shape(x, axis):
+    """Restore dimensions for broadcasting an extrema reduction gradient.
+
+    Args:
+        x (Variable or np.ndarray): Original input providing shape and ndim.
+        axis (int, tuple[int, ...], or None): Reduction axes, including negative
+            axes. None reduces all dimensions.
+
+    Returns:
+        tuple[int, ...]: Input shape with reduced dimensions replaced by one.
+    """
     if axis is None:
         return (1,) * x.ndim
     if isinstance(axis, (int, np.integer)):

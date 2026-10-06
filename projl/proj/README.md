@@ -12,7 +12,7 @@ projl/proj/
 │   └── mydezero/      # Library source code
 ├── tests/
 │   ├── core/          # Variables, arithmetic, backward, configuration
-│   ├── functions/     # Elementary, tensor, and optimization functions
+│   ├── functions/     # Elementary, tensor, classification, extrema, benchmarks
 │   ├── integration/   # Training steps and Graphviz rendering
 │   ├── test_layers.py
 │   ├── test_models.py
@@ -49,6 +49,8 @@ Run a feature group or an individual module while working on it:
 ```bash
 python3 -m pytest tests/core
 python3 -m pytest tests/functions/test_tensor.py
+python3 -m pytest tests/functions/test_classification.py
+python3 -m pytest tests/functions/test_extrema.py
 python3 -m pytest tests/test_optimizers.py
 python3 -m pytest tests/integration
 ```
@@ -63,6 +65,13 @@ optimizer tests check layer order, recursive parameter registration, hidden-laye
 activations, persistent momentum, independent parameter velocities, and hooks.
 Integration tests train both Sequential and MLP models with MomentumSGD and check
 that the loss decreases over multiple steps.
+
+Classification tests compare softmax and cross entropy gradients with centered
+finite differences, check second-order derivatives, and cover float32/float64,
+column labels, invalid labels, and large logits. Extrema tests cover positive,
+negative, and tuple axes, retained dimensions, and tied values. Clipping tests
+check the gradient convention at interval boundaries. A classification training
+test verifies that cross entropy works with MLP and MomentumSGD.
 
 ## Indexing, Composed Models, and Momentum
 
@@ -121,6 +130,72 @@ their velocity. Hooks run before updates, as with SGD. A momentum of zero produc
 the same updates as SGD. Trainable parameters should use floating-point NumPy
 arrays.
 
+## Softmax and Classification Loss
+
+`F.softmax(x, axis=1)` converts an `(N, C)` batch of logits into class
+probabilities. It subtracts the maximum before exponentiation to avoid overflow.
+For a 1D input, specify `axis=0`. Other NumPy axes, including negative axes,
+tuples, and `None`, are also supported.
+
+Pass unnormalized logits directly to `F.softmax_cross_entropy_loss(x, t)`.
+The loss centers logits before computing log probabilities and returns the mean
+negative log probability over the batch. Logits must have nonempty shape `(N, C)`;
+labels must be integer class indices in `[0, C)` with shape `(N,)` or `(N, 1)`.
+One-hot labels are not accepted. Backward computes `(softmax(x) - one_hot(t)) / N`
+for logits; labels receive no gradient. Floating-point logits should be finite.
+
+```python
+import numpy as np
+from mydezero import Variable
+import mydezero.functions as F
+
+logits = Variable(np.zeros((2, 3), dtype=np.float32))
+labels = np.array([[0], [2]], dtype=np.int64)
+loss = F.softmax_cross_entropy_loss(logits, labels)
+loss.backward()
+
+np.testing.assert_allclose(loss.data, np.log(3), rtol=1e-6)
+assert logits.grad.shape == (2, 3)
+assert logits.grad.dtype == np.float32
+probabilities = F.softmax(logits)
+np.testing.assert_allclose(probabilities.data.sum(axis=1), 1)
+```
+
+Use the same `model.cleargrads()`, `loss.backward()`, and `optimizer.update()`
+training steps as for squared error, replacing the loss with cross entropy and
+setting the final model width to the number of classes. Call
+`backward(create_graph=True)` to retain a differentiable gradient graph for
+second-order derivatives.
+
+## Extrema, Clipping, and Numerical Helpers
+
+`F.max` and `F.min` accept `axis` and `keepdims` with NumPy semantics. Negative
+axes and tuples are supported. Their backward convention sends the full incoming
+gradient to every tied extremum rather than dividing it among ties.
+
+`F.clip(x, x_min, x_max)` clamps values using NumPy without modifying its input.
+The gradient passes through values inside the interval and exactly on either
+boundary, and is zero outside it.
+
+```python
+import numpy as np
+from mydezero import Variable
+import mydezero.functions as F
+
+x = Variable(np.array([[-2.0, -1.0, 0.0, 1.0, 2.0]]))
+np.testing.assert_array_equal(F.max(x, axis=-1).data, [2.0])
+np.testing.assert_array_equal(F.min(x, axis=-1).data, [-2.0])
+clipped = F.clip(x, -1.0, 1.0)
+clipped.sum().backward()
+np.testing.assert_array_equal(clipped.data, [[-1, -1, 0, 1, 1]])
+np.testing.assert_array_equal(x.grad.data, [[0, 1, 1, 1, 0]])
+```
+
+`utils.logsumexp(x, axis=1)` computes log-sum-exp on a NumPy array while retaining
+reduced dimensions. It avoids exponential overflow and preserves the input, but
+does not record an automatic differentiation graph. `utils.max_backward_shape`
+restores reduced axes as size one for broadcasting max/min gradients.
+
 ## Implementation Compared with DeZero
 
 The local reference is `../reference/deep-learning-from-scratch-3-master-cn/dezero`.
@@ -129,11 +204,11 @@ MyDeZero currently implements a NumPy subset of that framework:
 | Module | Current implementation | Scope compared with DeZero |
 | --- | --- | --- |
 | `core.py` | Variable, Parameter, Function, graph configuration, arithmetic, higher-order differentiation | Uses a generation heap for backward traversal; NumPy only |
-| `functions.py` | Elementary functions, reshape, transpose, indexing, reductions, broadcasting, matrix multiplication, linear transform, squared error, sigmoid | NumPy indexing supports repeated-index gradient accumulation and higher-order differentiation; matrix multiplication and linear transforms support 2D batches; squared error follows DeZero's batch-size normalization |
+| `functions.py` | Elementary functions, tensor operations, squared error, softmax cross entropy, sigmoid, softmax, max/min, and clip | NumPy indexing supports repeated-index gradient accumulation and higher-order differentiation; matrix multiplication and linear transforms support 2D batches; classification loss accepts integer labels and averages over the batch |
 | `layers.py` | Recursive parameter collection and Linear with optional bias and deferred initialization | Convolution, recurrent layers, and weight serialization remain unimplemented |
 | `models.py` | Model base class, graph visualization, Sequential, and MLP | Pretrained networks remain unimplemented |
 | `optimizers.py` | Optimizer base class, hooks, SGD, and MomentumSGD | Other update rules and built-in hooks remain unimplemented |
-| `utils.py` | DOT graph generation, rendering, and reduction gradient helpers | Visualization lives here; `graph.py` is currently empty |
+| `utils.py` | DOT graph generation, rendering, reduction gradient helpers, and stable logsumexp | Numerical helpers use NumPy; visualization lives here; `graph.py` is currently empty |
 
 Library docstrings use Google style (`Args`, `Returns`, `Yields`, `Attributes`, and
 `Raises` where relevant). Function subclasses inherit the forward/backward contract

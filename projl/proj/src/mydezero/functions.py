@@ -554,6 +554,13 @@ def mean_squared_error(x0, x1):
 
 
 class SoftmaxCrossEntropy(Function):
+    """Compute the mean cross entropy from logits and integer class labels.
+
+    Center logits before logsumexp to avoid overflow and loss of precision from
+    large common offsets. Backward differentiates logits through softmax,
+    preserving higher-order gradients; labels receive no gradient.
+    """
+
     def forward(self, x, t):
         if x.ndim != 2 or 0 in x.shape:
             raise ValueError('x must have nonempty shape (N, C)')
@@ -582,11 +589,27 @@ class SoftmaxCrossEntropy(Function):
 
 
 def softmax_cross_entropy_loss(x, t):
+    """Compute batch-averaged softmax cross entropy from unnormalized logits.
+
+    Args:
+        x (Variable or np.ndarray): Finite floating-point logits of nonempty
+            shape (N, C). Do not apply softmax before passing x.
+        t (Variable or np.ndarray): Integer class indices of shape (N,) or
+            (N, 1), each in the range [0, C). One-hot labels are not supported.
+
+    Returns:
+        Variable: Scalar mean negative log probability of the target classes.
+
+    Raises:
+        ValueError: If shapes are invalid, N or C is zero, or labels are outside
+            the class range.
+        TypeError: If labels do not have an integer dtype.
+    """
     return SoftmaxCrossEntropy()(x, t)
 
 
 # =============================================================================
-# activation function: sigmoid
+# activation function: sigmoid, softmax
 # =============================================================================
 
 def sigmoid_simple(x):
@@ -635,6 +658,13 @@ def sigmoid(x):
 
 
 class Softmax(Function):
+    """Normalize exponentials after subtracting the maximum along selected axes.
+
+    Args:
+        axis (int, tuple[int, ...], or None): Normalization axes. Defaults to 1.
+            Negative axes follow NumPy conventions; None uses all dimensions.
+    """
+
     def __init__(self, axis=1):
         self.axis = axis
 
@@ -653,6 +683,17 @@ class Softmax(Function):
 
 
 def softmax(x, axis=1):
+    """Convert logits to probabilities while preserving the gradient graph.
+
+    Args:
+        x (Variable or np.ndarray): Finite floating-point input values.
+        axis (int, tuple[int, ...], or None): Normalization axes. Defaults to 1,
+            the class axis for an (N, C) batch. Use axis=0 for a 1D input.
+
+    Returns:
+        Variable: Probabilities with the same shape as x, summing to one along
+            the selected axes.
+    """
     return Softmax(axis)(x)
 
 
@@ -660,6 +701,16 @@ def softmax(x, axis=1):
 # max / min / clip
 # =============================================================================
 class Max(Function):
+    """Reduce maxima and send the full gradient to every tied maximum.
+
+    Equality masks define the backward convention at ties; the incoming
+    gradient is not divided among equal extrema.
+
+    Args:
+        axis (int, tuple[int, ...], or None): Reduction axes. Defaults to None.
+        keepdims (bool): Keep reduced dimensions with size one when True.
+    """
+
     def __init__(self, axis=None, keepdims=False):
         self.axis = axis
         self.keepdims = keepdims
@@ -681,20 +732,53 @@ class Max(Function):
 
 
 class Min(Max):
+    """Reduce minima with the same axis and tied-gradient conventions as Max."""
+
     def forward(self, x):
         y = x.min(axis=self.axis, keepdims=self.keepdims)
         return y
 
 
 def max(x, axis=None, keepdims=False):
+    """Reduce input maxima over the selected axes.
+
+    Args:
+        x (Variable or np.ndarray): Input values.
+        axis (int, tuple[int, ...], or None): Reduction axes, including negative
+            axes. None reduces all dimensions; an empty tuple reduces none.
+        keepdims (bool): Keep reduced dimensions with size one when True.
+
+    Returns:
+        Variable: Maximum values. Backward sends the full incoming gradient to
+            each tied maximum.
+    """
     return Max(axis, keepdims)(x)
 
 
 def min(x, axis=None, keepdims=False):
+    """Reduce input minima over the selected axes.
+
+    Args:
+        x (Variable or np.ndarray): Input values.
+        axis (int, tuple[int, ...], or None): Reduction axes, including negative
+            axes. None reduces all dimensions; an empty tuple reduces none.
+        keepdims (bool): Keep reduced dimensions with size one when True.
+
+    Returns:
+        Variable: Minimum values. Backward sends the full incoming gradient to
+            each tied minimum.
+    """
     return Min(axis, keepdims)(x)
 
 
 class Clip(Function):
+    """Clamp values with gradient one inside and on the interval boundaries.
+
+    Args:
+        x_min (float): Lower bound of the clipping interval.
+        x_max (float): Upper bound, at least x_min.
+    """
+
     def __init__(self, x_min, x_max):
         self.x_min = x_min
         self.x_max = x_max
@@ -711,4 +795,16 @@ class Clip(Function):
 
 
 def clip(x, x_min, x_max):
+    """Clamp input values to a closed interval without modifying the input.
+
+    Args:
+        x (Variable or np.ndarray): Input values.
+        x_min (float): Lower bound of the clipping interval.
+        x_max (float): Upper bound, at least x_min.
+
+    Returns:
+        Variable: Clipped values with the same shape as x. Backward passes the
+            gradient through values in [x_min, x_max], including the boundaries,
+            and returns zero for values outside the interval.
+    """
     return Clip(x_min, x_max)(x)
