@@ -562,19 +562,10 @@ class SoftmaxCrossEntropy(Function):
     """
 
     def forward(self, x, t):
-        if x.ndim != 2 or 0 in x.shape:
-            raise ValueError('x must have nonempty shape (N, C)')
         N = x.shape[0]
-        if t.shape not in ((N,), (N, 1)):
-            raise ValueError('t must have shape (N,) or (N, 1)')
-        if not np.issubdtype(t.dtype, np.integer):
-            raise TypeError('t must contain integer class indices')
-        labels = t.ravel()
-        if np.any(labels < 0) or np.any(labels >= x.shape[1]):
-            raise ValueError('class indices must be in [0, C)')
         shifted = x - x.max(axis=1, keepdims=True)
         log_p = shifted - utils.logsumexp(shifted, axis=1)
-        return -log_p[np.arange(N), labels].mean()
+        return -log_p[np.arange(N), t.ravel()].mean()
 
     def backward(self, gy):
         x, t = self.inputs
@@ -599,11 +590,6 @@ def softmax_cross_entropy_loss(x, t):
 
     Returns:
         Variable: Scalar mean negative log probability of the target classes.
-
-    Raises:
-        ValueError: If shapes are invalid, N or C is zero, or labels are outside
-            the class range.
-        TypeError: If labels do not have an integer dtype.
     """
     return SoftmaxCrossEntropy()(x, t)
 
