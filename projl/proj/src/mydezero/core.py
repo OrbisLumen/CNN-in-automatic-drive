@@ -185,6 +185,9 @@ def as_variable(obj):
     return Variable(obj)
 
 
+class Parameter(Variable):
+    pass
+
 class Function:
     """Base class differentiable functions.
 
