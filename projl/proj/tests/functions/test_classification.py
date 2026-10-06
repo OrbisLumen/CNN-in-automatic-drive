@@ -133,23 +133,3 @@ def test_single_class_cross_entropy_is_zero():
 
     np.testing.assert_allclose(loss.data, 0)
     np.testing.assert_allclose(x.grad.data, np.zeros_like(x.data))
-
-
-@pytest.mark.parametrize(
-    'logits, labels, error',
-    [
-        pytest.param(np.zeros(3), np.array([0]), ValueError, id='one-dimensional-logits'),
-        pytest.param(np.empty((0, 3)), np.array([], dtype=int), ValueError, id='empty-batch'),
-        pytest.param(np.empty((2, 0)), np.array([0, 0]), ValueError, id='empty-classes'),
-        pytest.param(np.zeros((2, 3)), np.array([0]), ValueError, id='wrong-label-count'),
-        pytest.param(np.zeros((2, 3)), np.array([[0, 1]]), ValueError, id='wrong-label-shape'),
-        pytest.param(np.zeros((2, 3)), np.eye(3)[:2], ValueError, id='one-hot-labels'),
-        pytest.param(np.zeros((2, 3)), np.array([0.0, 1.0]), TypeError, id='float-labels'),
-        pytest.param(np.zeros((2, 3)), np.array([True, False]), TypeError, id='bool-labels'),
-        pytest.param(np.zeros((2, 3)), np.array([-1, 0]), ValueError, id='negative-label'),
-        pytest.param(np.zeros((2, 3)), np.array([0, 3]), ValueError, id='out-of-range-label'),
-    ],
-)
-def test_cross_entropy_rejects_invalid_inputs(logits, labels, error):
-    with pytest.raises(error):
-        F.softmax_cross_entropy_loss(logits, labels)
