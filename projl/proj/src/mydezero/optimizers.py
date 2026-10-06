@@ -68,6 +68,11 @@ class Optimizer:
         self.hooks.append(f)
 
 
+# =============================================================================
+# SGD, Momentum
+# =============================================================================
+
+
 class SGD(Optimizer):
     """Apply stochastic gradient descent to parameters in place.
 

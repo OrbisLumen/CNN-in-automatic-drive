@@ -10,7 +10,16 @@ features such as variables, functions, backpropagation, and configuration.
 projl/proj/
 ├── src/
 │   └── mydezero/      # Library source code
-├── tests/             # Pytest test suite
+├── tests/
+│   ├── core/          # Variables, arithmetic, backward, configuration
+│   ├── functions/     # Elementary, tensor, and optimization functions
+│   ├── integration/   # Training steps and Graphviz rendering
+│   ├── test_layers.py
+│   ├── test_models.py
+│   ├── test_optimizers.py
+│   ├── test_utils.py
+│   ├── conftest.py    # Import setup and shared model fixture
+│   └── helpers.py     # Numerical differentiation helper
 └── README.md
 ```
 
@@ -34,6 +43,19 @@ python3 -m pytest tests
 
 The test configuration automatically adds `src/` to Python's import path, so no
 extra environment variables are required.
+
+Run a feature group or an individual module while working on it:
+
+```bash
+python3 -m pytest tests/core
+python3 -m pytest tests/functions/test_tensor.py
+python3 -m pytest tests/test_optimizers.py
+python3 -m pytest tests/integration
+```
+
+The Graphviz rendering test uses a temporary directory and skips automatically
+when `dot` is unavailable. Other tests do not require Graphviz. Shared model
+fixtures return a fresh instance for every test.
 
 ## Implementation Compared with DeZero
 

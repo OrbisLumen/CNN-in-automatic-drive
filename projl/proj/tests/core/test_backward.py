@@ -1,4 +1,7 @@
+"""Graph traversal, gradient accumulation, and higher-order derivatives."""
+
 import numpy as np
+import pytest
 
 from mydezero import Variable
 from mydezero.core import add, mul
@@ -15,7 +18,7 @@ def test_composed_function_backward():
     np.testing.assert_allclose(x.grad.data, 3.297442541400256)
 
 
-def test_backward_respects_initial_output_gradient():
+def test_backward_accepts_ndarray_output_gradient():
     x = Variable(np.array(0.5))
     y = square(exp(square(x)))
     y.grad = np.array(1.0)
@@ -46,22 +49,16 @@ def test_add_and_square_backward():
     np.testing.assert_allclose(x1.grad.data, 6.0)
 
 
-def test_reused_variable_accumulates_gradient():
+@pytest.mark.parametrize('uses', [2, 3], ids=['two-uses', 'three-uses'])
+def test_reused_variable_accumulates_gradient(uses):
     x = Variable(np.array(3.0))
     y = add(x, x)
+    if uses == 3:
+        y = add(y, x)
 
     y.backward()
 
-    np.testing.assert_allclose(x.grad.data, 2.0)
-
-
-def test_reused_variable_accumulates_gradient_across_multiple_adds():
-    x = Variable(np.array(3.0))
-    y = add(add(x, x), x)
-
-    y.backward()
-
-    np.testing.assert_allclose(x.grad.data, 3.0)
+    np.testing.assert_allclose(x.grad.data, uses)
 
 
 def test_branching_graph_backward():
@@ -88,8 +85,8 @@ def test_backward_discards_intermediate_gradients_by_default():
     np.testing.assert_allclose(x0.grad.data, 2.0)
     np.testing.assert_allclose(x1.grad.data, 1.0)
 
-def test_mul_function_backward():
 
+def test_mul_function_backward():
     a = Variable(np.array(3.0))
     b = Variable(np.array(2.0))
     c = Variable(np.array(1.0))
@@ -99,3 +96,16 @@ def test_mul_function_backward():
 
     np.testing.assert_allclose(a.grad.data, 2.0)
     np.testing.assert_allclose(b.grad.data, 3.0)
+
+
+def test_second_backward_accumulates_existing_gradient():
+    x = Variable(np.array(2.0))
+    y = x ** 4 - 2 * x ** 2
+    y.backward(create_graph=True)
+    np.testing.assert_allclose(x.grad.data, 24.0)
+
+    gx = x.grad
+    gx.backward()
+
+    # The first gradient remains: 24 + (12 * x**2 - 4) = 68 at x = 2.
+    np.testing.assert_allclose(x.grad.data, 68.0)

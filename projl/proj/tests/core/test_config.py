@@ -1,7 +1,9 @@
+"""Backpropagation configuration and context restoration."""
+
 import numpy as np
 
 from mydezero import Variable, using_config
-from mydezero.functions import exp, square
+from mydezero.functions import square
 
 
 def test_disabling_backprop_does_not_create_graph():
