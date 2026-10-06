@@ -1,10 +1,13 @@
 """A complete model, loss, backward, and optimizer training step."""
 
 import numpy as np
+import pytest
 
 from mydezero import Variable
 import mydezero.functions as F
-from mydezero.optimizers import SGD
+from mydezero.layers import Linear
+from mydezero.models import MLP, Sequential
+from mydezero.optimizers import MomentumSGD, SGD
 
 
 def test_nested_model_training_step_and_optimizer_hooks(regression_model):
@@ -28,3 +31,27 @@ def test_nested_model_training_step_and_optimizer_hooks(regression_model):
     assert F.mean_squared_error(model(x), target).data < loss.data
     model.cleargrads()
     assert all(param.grad is None for param in model.params())
+
+
+@pytest.mark.parametrize('kind', ['sequential', 'mlp'])
+def test_composed_model_training_with_momentum_reduces_loss(kind):
+    model = Sequential(Linear(2), Linear(1)) if kind == 'sequential' else MLP((2, 1))
+    x = Variable(np.array([[0.0], [1.0], [2.0]]))
+    target = Variable(np.array([[1.0], [3.0], [5.0]]))
+    model(x)
+    for layer in model.layers:
+        layer.W.data[:] = 0.1
+        layer.b.data[:] = 0
+    optimizer = MomentumSGD(lr=0.02, momentum=0.5).setup(model)
+    initial_loss = float(F.mean_squared_error(model(x), target).data)
+
+    for _ in range(30):
+        model.cleargrads()
+        loss = F.mean_squared_error(model(x), target)
+        loss.backward()
+        assert all(param.grad is not None for param in model.params())
+        optimizer.update()
+
+    final_loss = float(F.mean_squared_error(model(x), target).data)
+    assert np.isfinite(final_loss)
+    assert final_loss < initial_loss * 0.5
