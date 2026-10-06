@@ -55,3 +55,27 @@ def test_composed_model_training_with_momentum_reduces_loss(kind):
     final_loss = float(F.mean_squared_error(model(x), target).data)
     assert np.isfinite(final_loss)
     assert final_loss < initial_loss * 0.5
+
+
+def test_softmax_cross_entropy_trains_a_classifier_with_momentum():
+    x = np.array([[-2.0], [-1.0], [1.0], [2.0]], dtype=np.float32)
+    labels = np.array([0, 0, 1, 1], dtype=np.int64)
+    model = MLP((2,))
+    model(x)
+    model.l0.W.data = np.zeros((1, 2), dtype=np.float32)
+    model.l0.b.data[:] = 0
+    optimizer = MomentumSGD(lr=0.1, momentum=0.5).setup(model)
+    initial_loss = float(F.softmax_cross_entropy_loss(model(x), labels).data)
+
+    for _ in range(30):
+        model.cleargrads()
+        loss = F.softmax_cross_entropy_loss(model(x), labels)
+        loss.backward()
+        for param in model.params():
+            assert param.grad.shape == param.shape
+            assert param.grad.dtype == param.dtype
+        optimizer.update()
+
+    logits = model(x)
+    assert float(F.softmax_cross_entropy_loss(logits, labels).data) < initial_loss * 0.25
+    np.testing.assert_array_equal(logits.data.argmax(axis=1), labels)
