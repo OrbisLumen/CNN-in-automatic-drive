@@ -1,10 +1,28 @@
 import numpy as np
 from pathlib import Path
-from mydezero import Variable
+from mydezero import Variable, no_grad
 from mydezero.functions import goldstein
-from mydezero.utils import plot_dot_graph
+from mydezero.utils import get_dot_graph, plot_dot_graph
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_get_dot_graph_for_leaf_variable():
+    x = Variable(np.array(1.0), name='x')
+    graph = get_dot_graph(x)
+
+    assert graph.startswith('digraph G {')
+    assert 'label="x: () float64"' in graph
+    assert '->' not in graph
+
+
+def test_get_dot_graph_without_backprop():
+    with no_grad():
+        y = Variable(np.array(1.0)) + 2
+
+    graph = get_dot_graph(y)
+    assert str(id(y)) in graph
+    assert '->' not in graph
 
 def test_plot_dot_graph_with_goldstein():
 

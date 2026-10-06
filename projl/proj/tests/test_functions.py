@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from mydezero import Variable
 from mydezero.core import add
@@ -28,6 +29,30 @@ def test_composed_function_forward():
     y = F.square(F.exp(F.square(x)))
 
     np.testing.assert_allclose(y.data, 1.648721270700128)
+
+
+def test_exp_higher_order_derivative():
+    x = Variable(np.array(1.0))
+    y = F.exp(x)
+    y.backward(create_graph=True)
+
+    for _ in range(2):
+        gx = x.grad
+        x.cleargrad()
+        gx.backward(create_graph=True)
+        np.testing.assert_allclose(x.grad.data, np.e)
+
+
+@pytest.mark.parametrize('value', [-1000.0, -1.0, 0.0, 1.0, 1000.0])
+def test_sigmoid_forward_and_backward_without_overflow(value):
+    x = Variable(np.array(value))
+    with np.errstate(over='raise', invalid='raise'):
+        y = F.sigmoid(x)
+        y.backward()
+
+    expected = np.exp(-np.logaddexp(0.0, -value))
+    np.testing.assert_allclose(y.data, expected)
+    np.testing.assert_allclose(x.grad.data, expected * (1 - expected))
 
 
 def test_basic_sin():
