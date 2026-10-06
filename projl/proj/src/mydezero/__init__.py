@@ -1,3 +1,5 @@
+"""Public framework objects and arithmetic operator initialization."""
+
 from mydezero.core import Variable
 from mydezero.core import Parameter
 from mydezero.core import Function

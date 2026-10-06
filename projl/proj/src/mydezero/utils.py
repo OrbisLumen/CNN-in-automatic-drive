@@ -1,14 +1,21 @@
+"""Graphviz visualization and array helpers for reduction gradients."""
+
 from pathlib import Path
 import subprocess
-import numpy as np
-from mydezero import Variable
-
 
 # =============================================================================
 # graphviz visualization
 # =============================================================================
 def _dot_var(v, verbose=False):
-    """Helper function for get_dot_graph, to generate the variable node"""
+    """Build a DOT node declaration for a variable.
+
+    Args:
+        v (Variable): Variable to represent.
+        verbose (bool): Include shape and dtype when data is initialized.
+
+    Returns:
+        str: DOT declaration using the variable's identity as its node ID.
+    """
     dot_var = '{} [label="{}", color=orange, style=filled]\n'
 
     name = '' if v.name is None else v.name
@@ -20,7 +27,14 @@ def _dot_var(v, verbose=False):
 
 
 def _dot_func(f):
-    """Helper function for get_dot_graph, to generate the function node and connect"""
+    """Build a DOT function node and edges to its inputs and outputs.
+
+    Args:
+        f (Function): Recorded function whose output weak references are alive.
+
+    Returns:
+        str: DOT declarations for the function and its connecting edges.
+    """
     dot_func = '{} [label="{}", color=lightblue, style=filled, shape=box]\n'
     txt = dot_func.format(id(f), f.__class__.__name__)
 
@@ -33,15 +47,17 @@ def _dot_func(f):
 
 
 def get_dot_graph(output, verbose=True):
-    """Generate the dot graph as a whole, not api function.
+    """Generate DOT source for the computation graph ending at output.
 
-    Since the graphviz just need connection, no request of order,
-    only using the seen_set() is just okay, in contrast to backward
+    Each function is visited once. Graph rendering does not require the generation
+    ordering used by backward. A leaf variable produces a graph with one node.
 
-    Parameters:
-        output (Variable): The final output of a computation.
-        verbose (bool): True to add var name, shape and dtype information.
+    Args:
+        output (Variable): Final output whose ancestors will be traversed.
+        verbose (bool): Include variable shapes and dtypes in node labels.
 
+    Returns:
+        str: Complete Graphviz DOT source.
     """
     txt = ''
     funcs = []
@@ -67,18 +83,23 @@ def get_dot_graph(output, verbose=True):
 
 
 def plot_dot_graph(output, verbose=True, to_file='graph.png'):
-    """Generate the dot graph as a whole.
+    """Render a computation graph with Graphviz for notebook display.
 
-    The function to generalize a graphviz picture and show in the jupyter notebook if opened.
+    DOT source is written to the shared draft/temp.dot file under the project.
+    Calls overwrite that file. The output extension selects the Graphviz format.
 
-    Temp files are stored in proj/draft, all the graph share a single temp.dot,
-    you must ensure not using it too frequently when you need to see the source file.
-    But the real picture styled file will be named by you, so don't worry the conflict.
+    Args:
+        output (Variable): Final output whose graph will be rendered.
+        verbose (bool): Include variable shapes and dtypes in node labels.
+        to_file (str or pathlib.Path): Output path including a Graphviz-supported
+            extension. Relative paths are resolved under the draft directory.
 
-    Parameters:
-        output (Variable): The final output of a computation.
-        verbose (bool): True to add var name, shape and dtype information in the var node.
-        to_file (str): graph file name with extension (must add the target extension!!!).
+    Returns:
+        IPython.display.Image or None: Displayable image if IPython can load the
+            rendered file; otherwise None.
+
+    Raises:
+        FileNotFoundError: If the Graphviz dot executable is unavailable.
     """
 
     dot_graph = get_dot_graph(output, verbose)
@@ -103,6 +124,7 @@ def plot_dot_graph(output, verbose=True, to_file='graph.png'):
     except:
         pass
 
+
 # =============================================================================
 # utils function for numpy
 # =============================================================================
@@ -110,12 +132,12 @@ def plot_dot_graph(output, verbose=True, to_file='graph.png'):
 def sum_to(x, shape):
     """Sum elements along axes to output an array of a given shape.
 
-    Arguments:
+    Args:
         x (np.ndarray): Input array.
-        shape (tuple): Shape of the output array.
+        shape (tuple[int, ...]): Target shape compatible with reducing x.
 
     Returns:
-        np.ndarray: Output array of the shape.
+        np.ndarray: Reduced array with the requested shape.
     """
     ndim = len(shape)
     lead = x.ndim - ndim
@@ -127,18 +149,19 @@ def sum_to(x, shape):
         y = y.squeeze(lead_axis)
     return y
 
+
 def reshape_sum_backward(gy, x_shape, axis, keepdims):
     """Reshape gradient appropriately for mydezero.functions.sum's backward.
 
-    Arguments:
+    Args:
         gy (Variable): Gradient variable from the output by backprop.
-        x_shape (tuple): Shape used at sum function's forward.
-        axis (None or int or tuple of ints): Axis used at sum function's
+        x_shape (tuple[int, ...]): Shape used at sum function's forward.
+        axis (int or tuple[int, ...] or None): Axes used at sum function's
             forward.
         keepdims (bool): Keepdims used at sum function's forward.
 
     Returns:
-        Variable: Gradient variable which is reshaped appropriately
+        Variable: Gradient with singleton dimensions restored for broadcasting.
     """
     ndim = len(x_shape)
     tupled_axis = axis

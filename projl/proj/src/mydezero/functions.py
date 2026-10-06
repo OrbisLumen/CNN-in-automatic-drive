@@ -1,3 +1,5 @@
+"""Differentiable NumPy operations and optimization benchmark functions."""
+
 import numpy as np
 from mydezero.core import Function, as_variable
 from mydezero import utils
@@ -8,6 +10,7 @@ from mydezero import utils
 # =============================================================================
 
 class Square(Function):
+    """Compute the elementwise square with a differentiable backward pass."""
 
     def forward(self, x):
         return x ** 2
@@ -18,10 +21,23 @@ class Square(Function):
         return gx
 
 
-def square(x): return Square()(x)
+def square(x):
+    """Compute the elementwise square.
+
+    Args:
+        x (Variable or np.ndarray): Input values.
+
+    Returns:
+        Variable: Elementwise result with the same shape as x.
+    """
+    return Square()(x)
 
 
 class Exp(Function):
+    """Compute the elementwise exponential with a differentiable backward pass.
+
+    Uses differentiable operations in backward to preserve higher-order gradients.
+    """
 
     def forward(self, x):
         return np.exp(x)
@@ -32,7 +48,16 @@ class Exp(Function):
         return gx
 
 
-def exp(x): return Exp()(x)
+def exp(x):
+    """Compute the elementwise exponential.
+
+    Args:
+        x (Variable or np.ndarray): Input values.
+
+    Returns:
+        Variable: Elementwise result with the same shape as x.
+    """
+    return Exp()(x)
 
 
 # =============================================================================
@@ -40,14 +65,44 @@ def exp(x): return Exp()(x)
 # =============================================================================
 
 def sphere(x, y):
+    """Evaluate the sphere benchmark for optimization examples.
+
+    Args:
+        x (Variable or np.ndarray): First coordinate.
+        y (Variable or np.ndarray): Second coordinate.
+
+    Returns:
+        Variable or np.ndarray: Benchmark value, with the input wrapper type
+            preserved and elementwise evaluation supported.
+    """
     return x ** 2 + y ** 2
 
 
 def matyas(x, y):
+    """Evaluate the Matyas benchmark for optimization examples.
+
+    Args:
+        x (Variable or np.ndarray): First coordinate.
+        y (Variable or np.ndarray): Second coordinate.
+
+    Returns:
+        Variable or np.ndarray: Benchmark value, with the input wrapper type
+            preserved and elementwise evaluation supported.
+    """
     return 0.26 * (x ** 2 + y ** 2) - 0.48 * x * y
 
 
 def goldstein(x, y):
+    """Evaluate the Goldstein-Price benchmark for optimization examples.
+
+    Args:
+        x (Variable or np.ndarray): First coordinate.
+        y (Variable or np.ndarray): Second coordinate.
+
+    Returns:
+        Variable or np.ndarray: Benchmark value, with the input wrapper type
+            preserved and elementwise evaluation supported.
+    """
     z = (1 + (x + y + 1) ** 2 * (19 - 14 * x + 3 * x ** 2 - 14 * y + 6 * x * y + 3 * y ** 2)) * (
             30 + (2 * x - 3 * y) ** 2 * (18 - 32 * x + 12 * x ** 2 + 48 * y - 36 * x * y + 27 * y ** 2))
     return z
@@ -58,6 +113,8 @@ def goldstein(x, y):
 # =============================================================================
 
 class Sin(Function):
+    """Compute the elementwise sine with a differentiable backward pass."""
+
     def forward(self, x):
         y = np.sin(x)
         return y
@@ -68,10 +125,21 @@ class Sin(Function):
         return gx
 
 
-def sin(x): return Sin()(x)
+def sin(x):
+    """Compute the elementwise sine.
+
+    Args:
+        x (Variable or np.ndarray): Input values.
+
+    Returns:
+        Variable: Elementwise result with the same shape as x.
+    """
+    return Sin()(x)
 
 
 class Cos(Function):
+    """Compute the elementwise cosine with a differentiable backward pass."""
+
     def forward(self, x):
         y = np.cos(x)
         return y
@@ -82,10 +150,21 @@ class Cos(Function):
         return gx
 
 
-def cos(x): return Cos()(x)
+def cos(x):
+    """Compute the elementwise cosine.
+
+    Args:
+        x (Variable or np.ndarray): Input values.
+
+    Returns:
+        Variable: Elementwise result with the same shape as x.
+    """
+    return Cos()(x)
 
 
 class Tanh(Function):
+    """Compute the elementwise hyperbolic tangent with a differentiable backward pass."""
+
     def forward(self, x):
         y = np.tanh(x)
         return y
@@ -96,17 +175,30 @@ class Tanh(Function):
         return gx
 
 
-def tanh(x): return Tanh()(x)
+def tanh(x):
+    """Compute the elementwise hyperbolic tangent.
+
+    Args:
+        x (Variable or np.ndarray): Input values.
+
+    Returns:
+        Variable: Elementwise result with the same shape as x.
+    """
+    return Tanh()(x)
 
 
 # =============================================================================
 # Tensor Operations: reshape, transpose
 # =============================================================================
 class Reshape(Function):
-    """
+    """Change an input shape without changing its elements.
+
+    Args:
+        shape (tuple[int, ...]): Target shape.
+
     Attributes:
-        shape (tuple): Shape of the target.
-        x.shape (tuple): Shape of the input.
+        shape (tuple[int, ...]): Requested output shape.
+        x_shape (tuple[int, ...]): Input shape saved during forward for backward.
     """
 
     def __init__(self, shape):
@@ -122,15 +214,29 @@ class Reshape(Function):
 
 
 def reshape(x, shape):
+    """Reshape an input while retaining its gradient connection.
+
+    Args:
+        x (Variable or np.ndarray): Input values.
+        shape (tuple[int, ...]): Target shape with at most one inferred dimension (-1).
+
+    Returns:
+        Variable: Reshaped input, or the original variable if its shape matches.
+    """
     if x.shape == shape:
         return as_variable(x)
     return Reshape(shape)(x)
 
 
 class Transpose(Function):
-    """
+    """Permute axes and apply the inverse permutation during backward.
+
+    Args:
+        axes (tuple[int, ...] or list[int] or None): Axis permutation. None reverses
+            all axes. Negative axes are supported.
+
     Attributes:
-        axes (None | list | tuple): Axes to transpose.
+        axes (tuple[int, ...] or list[int] or None): Requested axis order.
     """
 
     def __init__(self, axes=None):
@@ -150,6 +256,16 @@ class Transpose(Function):
 
 
 def transpose(x, axes=None):
+    """Permute input axes.
+
+    Args:
+        x (Variable or np.ndarray): Input values.
+        axes (tuple[int, ...] or list[int] or None): Axis permutation; None reverses
+            all axes.
+
+    Returns:
+        Variable: Input with its axes reordered.
+    """
     return Transpose(axes)(x)
 
 
@@ -158,11 +274,16 @@ def transpose(x, axes=None):
 # =============================================================================
 
 class Sum(Function):
-    """
+    """Reduce an input and broadcast its gradient back to the input shape.
+
+    Args:
+        axis (int or tuple[int, ...] or None): Axes to reduce; None reduces all.
+        keepdims (bool): Retain reduced axes as dimensions of size one.
+
     Attributes:
-        axis (int): The target axis to sum up.
-        keepdims (bool): True to keep the dims as before.
-        x_shape (tuple): Shape of the input.
+        axis (int or tuple[int, ...] or None): Reduction axes.
+        keepdims (bool): Whether reduced dimensions are retained.
+        x_shape (tuple[int, ...]): Input shape saved during forward.
     """
 
     def __init__(self, axis, keepdims):
@@ -181,14 +302,29 @@ class Sum(Function):
         return gx
 
 
-def sum(x, axis=None, keepdims=False): return Sum(axis, keepdims)(x)
+def sum(x, axis=None, keepdims=False):
+    """Sum elements along the requested axes.
+
+    Args:
+        x (Variable or np.ndarray): Input values.
+        axis (int or tuple[int, ...] or None): Axes to reduce; None reduces all.
+        keepdims (bool): Retain reduced axes as dimensions of size one.
+
+    Returns:
+        Variable: Reduced sum.
+    """
+    return Sum(axis, keepdims)(x)
 
 
 class SumTo(Function):
-    """
+    """Reduce broadcast dimensions to a target shape.
+
+    Args:
+        shape (tuple[int, ...]): Target shape.
+
     Attributes:
-        shape (tuple): Shape of the target.
-        x.shape (tuple): Shape of the input.
+        shape (tuple[int, ...]): Requested output shape.
+        x_shape (tuple[int, ...]): Input shape saved during forward for backward.
     """
 
     def __init__(self, shape):
@@ -205,16 +341,29 @@ class SumTo(Function):
 
 
 def sum_to(x, shape):
+    """Sum elements over broadcast dimensions to obtain a target shape.
+
+    Args:
+        x (Variable or np.ndarray): Input values.
+        shape (tuple[int, ...]): Target shape.
+
+    Returns:
+        Variable: Reduced input, or the original variable if its shape matches.
+    """
     if x.shape == shape:
         return as_variable(x)
     return SumTo(shape)(x)
 
 
 class BroadcastTo(Function):
-    """
+    """Broadcast an input to a target shape.
+
+    Args:
+        shape (tuple[int, ...]): Target shape.
+
     Attributes:
-        shape (tuple): Shape of the target.
-        x_shape (tuple): Shape of the input.
+        shape (tuple[int, ...]): Requested output shape.
+        x_shape (tuple[int, ...]): Input shape saved during forward for backward.
     """
 
     def __init__(self, shape):
@@ -231,12 +380,23 @@ class BroadcastTo(Function):
 
 
 def broadcast_to(x, shape):
+    """Broadcast an input to a compatible target shape.
+
+    Args:
+        x (Variable or np.ndarray): Input values.
+        shape (tuple[int, ...]): Target shape.
+
+    Returns:
+        Variable: Broadcast input, or the original variable if its shape matches.
+    """
     if x.shape == shape:
         return as_variable(x)
     return BroadcastTo(shape)(x)
 
 
 class MatMul(Function):
+    """Multiply two matrices and propagate gradients to both operands."""
+
     def forward(self, x, W):
         y = x.dot(W)
         return y
@@ -249,11 +409,24 @@ class MatMul(Function):
 
 
 def matmul(x, W):
+    """Multiply two two-dimensional matrices.
+
+    Args:
+        x (Variable or np.ndarray): Left matrix of shape (N, K).
+        W (Variable or np.ndarray): Right matrix of shape (K, M).
+
+    Returns:
+        Variable: Matrix product of shape (N, M).
+    """
     return MatMul()(x, W)
 
 
 class Linear(Function):
-    """basic linear layer function"""
+    """Compute an affine transform and gradients for the input, weights, and bias.
+
+    The bias is optional. Its backward gradient is reduced over the batch dimension.
+    This Function performs the computation; layers.Linear owns trainable parameters.
+    """
 
     def forward(self, x, W, b):
         y = x.dot(W)
@@ -270,6 +443,16 @@ class Linear(Function):
 
 
 def linear(x, W, b=None):
+    """Apply an affine transform to a batch of inputs.
+
+    Args:
+        x (Variable or np.ndarray): Input matrix of shape (N, in_size).
+        W (Variable or np.ndarray): Weight matrix of shape (in_size, out_size).
+        b (Variable or np.ndarray or None): Optional bias of shape (out_size,).
+
+    Returns:
+        Variable: Transformed batch of shape (N, out_size).
+    """
     return Linear()(x, W, b)
 
 
@@ -278,6 +461,12 @@ def linear(x, W, b=None):
 # =============================================================================
 
 class MeanSquaredError(Function):
+    """Sum squared errors and normalize by the batch size, following DeZero.
+
+    Inputs should have the same shape and at least one dimension. For multicolumn
+    outputs, the loss sums over output features rather than averaging over them.
+    """
+
     def forward(self, x0, x1):
         diff = x0 - x1
         y = (diff ** 2).sum() / len(diff)
@@ -292,6 +481,15 @@ class MeanSquaredError(Function):
 
 
 def mean_squared_error(x0, x1):
+    """Compute squared error summed over elements and divided by batch size.
+
+    Args:
+        x0 (Variable or np.ndarray): Predictions of shape (N, ...) with N > 0.
+        x1 (Variable or np.ndarray): Targets with the same shape as x0.
+
+    Returns:
+        Variable: Scalar loss normalized by N, not by the total element count.
+    """
     return MeanSquaredError()(x0, x1)
 
 
@@ -300,12 +498,28 @@ def mean_squared_error(x0, x1):
 # =============================================================================
 
 def sigmoid_simple(x):
+    """Compute the logistic sigmoid by composing differentiable operations.
+
+    This teaching version constructs the graph for 1 / (1 + exp(-x)); use sigmoid
+    for the formulation that avoids exponential overflow on large negative inputs.
+
+    Args:
+        x (Variable or np.ndarray): Input values.
+
+    Returns:
+        Variable: Elementwise sigmoid with the same shape as x.
+    """
     x = as_variable(x)
     y = 1 / (1 + exp(-x))
     return y
 
 
 class Sigmoid(Function):
+    """Compute the elementwise logistic sigmoid with a differentiable backward pass.
+
+    Uses the tanh formulation from DeZero to avoid exponential overflow.
+    """
+
     def forward(self, x):
         y = np.tanh(x * 0.5) * 0.5 + 0.5
         return y
@@ -316,4 +530,13 @@ class Sigmoid(Function):
         return gx
 
 
-def sigmoid(x): return Sigmoid()(x)
+def sigmoid(x):
+    """Compute the elementwise logistic sigmoid.
+
+    Args:
+        x (Variable or np.ndarray): Input values.
+
+    Returns:
+        Variable: Elementwise result with the same shape as x.
+    """
+    return Sigmoid()(x)
