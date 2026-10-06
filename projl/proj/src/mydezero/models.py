@@ -37,6 +37,18 @@ class Model(Layer):
 # Sequential, MLP
 # =============================================================================
 class Sequential(Model):
+    """Apply layers in their supplied order.
+
+    Each layer is registered as l0, l1, and so on, allowing params and
+    cleargrads to recurse into it. An empty sequence returns its input.
+
+    Args:
+        *layers (Layer): Layers accepting and returning a single value.
+
+    Attributes:
+        layers (list[Layer]): Layers in forward execution order.
+    """
+
     def __init__(self, *layers):
         super().__init__()
         self.layers = []
@@ -45,11 +57,35 @@ class Sequential(Model):
             self.layers.append(layer)
 
     def forward(self, x):
+        """Pass one input through every layer.
+
+        Args:
+            x (Variable or np.ndarray): Input accepted by the first layer.
+
+        Returns:
+            Variable or np.ndarray: Last layer's output, or x for an empty model.
+        """
         for layer in self.layers:
             x = layer(x)
         return x
 
 class MLP(Model):
+    """Build fully connected layers with activation on hidden outputs only.
+
+    Linear layers infer their input widths on the first forward pass. The last
+    layer produces an affine output without applying the activation.
+
+    Args:
+        fc_output_sizes (Sequence[int]): Nonempty sequence of layer output widths,
+            including the final output width.
+        activation (Callable): Differentiable hidden-layer activation, defaulting
+            to mydezero.functions.sigmoid.
+
+    Attributes:
+        activation (Callable): Activation applied between Linear layers.
+        layers (list[Linear]): Registered layers in forward execution order.
+    """
+
     def __init__(self, fc_output_sizes, activation = F.sigmoid):
         super().__init__()
         self.activation = activation
@@ -61,6 +97,14 @@ class MLP(Model):
             self.layers.append(layer)
 
     def forward(self, x):
+        """Apply hidden affine transforms and activations, then the output layer.
+
+        Args:
+            x (Variable or np.ndarray): Input batch of shape (N, in_size).
+
+        Returns:
+            Variable: Output batch of shape (N, fc_output_sizes[-1]).
+        """
         for l in self.layers[:-1]:
             x = self.activation(l(x))
         return self.layers[-1](x)

@@ -270,6 +270,13 @@ def transpose(x, axes=None):
 
 
 class GetItem(Function):
+    """Select elements and scatter their gradients back to the input.
+
+    Args:
+        slices (object): A NumPy index, including slices, integers, index arrays,
+            boolean masks, or tuples combining indices.
+    """
+
     def __init__(self, slices):
         self.slices = slices
 
@@ -284,6 +291,16 @@ class GetItem(Function):
 
 
 class GetItemGrad(Function):
+    """Accumulate indexing gradients, including repeated indices.
+
+    Uses np.add.at so repeated selections contribute once per occurrence.
+    Its backward pass gathers elements to support higher-order derivatives.
+
+    Args:
+        slices (object): Index used in the corresponding GetItem operation.
+        in_shape (tuple[int, ...]): Shape of the original input.
+    """
+
     def __init__(self, slices, in_shape):
         self.slices = slices
         self.in_shape = in_shape
@@ -298,6 +315,16 @@ class GetItemGrad(Function):
 
 
 def get_item(x, slices):
+    """Select elements using NumPy indexing while preserving the gradient graph.
+
+    Args:
+        x (Variable or np.ndarray): Input values.
+        slices (object): NumPy-compatible index. Repeated indices accumulate
+            gradients during backward propagation.
+
+    Returns:
+        Variable: Selected elements with the shape produced by NumPy indexing.
+    """
     f = GetItem(slices)
     return f(x)
 
@@ -527,7 +554,7 @@ def mean_squared_error(x0, x1):
 
 
 # =============================================================================
-# activation function: sigmoid, softmax
+# activation function: sigmoid
 # =============================================================================
 
 def sigmoid_simple(x):

@@ -98,6 +98,24 @@ class SGD(Optimizer):
 
 
 class MomentumSGD(Optimizer):
+    """Apply SGD with a persistent velocity for each parameter.
+
+    Each update computes v = momentum * v - lr * grad, then adds v to the
+    parameter. Velocity starts at zero on the first update. Parameters without
+    gradients are skipped by Optimizer.update, retaining their stored velocity.
+
+    Args:
+        lr (float): Learning rate. Defaults to 0.01.
+        momentum (float): Retained fraction of the previous velocity. Defaults
+            to 0.9. Zero gives the same updates as SGD.
+
+    Attributes:
+        lr (float): Learning rate used for each update.
+        momentum (float): Velocity decay factor.
+        vs (dict[int, np.ndarray]): Velocities keyed by parameter identity,
+            with each parameter's shape and dtype.
+    """
+
     def __init__(self, lr=0.01, momentum=0.9):
         super().__init__()
         self.lr = lr
@@ -105,6 +123,12 @@ class MomentumSGD(Optimizer):
         self.vs = {}
 
     def update_one(self, param):
+        """Update a parameter and its stored velocity in place.
+
+        Args:
+            param (Parameter): Initialized floating-point NumPy parameter with
+                a Variable gradient.
+        """
         v_key = id(param)
         if v_key not in self.vs:
             self.vs[v_key] = np.zeros_like(param.data)
