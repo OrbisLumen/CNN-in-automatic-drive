@@ -1,98 +1,50 @@
 # CNN-in-automatic-drive
 
-## Overview
+CNN 自动驾驶课程仓库：实现 MyDeZero，并用于 DonkeyCar 仿真小车的训练与控制。
 
-This repository contains coursework and semester projects on the application of
-convolutional neural networks (CNNs) to automated driving. The work is organized
-into three semester directories:
-
-- `projl`: first-semester work
-- `projll`: second-semester work
-- `projlll`: third-semester work
-
-## Repository Structure
-
-Shared documentation is maintained in `doc/`. Each semester has its
-own requirements, reference materials, project implementation, and assignments.
+## 目录
 
 ```text
-CNN-in-automatic-drive/
-├── AGENTS.md      # Repository working guidelines
-├── README.md     # Project overview and setup
-├── doc/          # Shared documentation and policy
-├── projl/        # First-semester work
-├── projll/       # Second-semester work
-└── projlll/      # Third-semester work
+├── projl/       # 第一学期
+├── projll/      # 第二学期
+├── projlll/     # 第三学期
+├── doc/         # 环境与协作说明
+└── tools/       # 本机第三方源码、模拟器，不提交 Git
 ```
 
-Each semester folder generally follows this structure:
+各学期按 `request/`（要求）、`reference/`（参考）、`proj/`（项目）、
+`work/`（作业）整理。开始任务前阅读对应要求及 [AGENTS.md](AGENTS.md)，改动限于相关学期。
 
-```text
-proj*/
-├── reference/  # Reference materials and examples
-├── request/    # Assignment requirements and instructions
-├── proj/       # Main semester project
-└── work/       # Completed and in-progress work
-    └── hw*/    # Homework assignments
-```
+## 安装与测试
 
-## Environment Setup
-
-The semester projects currently use Python. Use an isolated environment, such as
-`venv` or Conda, to manage project dependencies.
-
-For a `venv` environment on macOS or Linux, run the following commands from the
-repository root:
+每台电脑使用一个根目录 `.venv`，供 MyDeZero 和小车控制共用。首次创建：
 
 ```bash
+# macOS / Linux
 python3 -m venv .venv
 source .venv/bin/activate
-python3 -m pip install numpy jupyter matplotlib pytest
 ```
 
-The shared Python tools are:
+```powershell
+# Windows PowerShell
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
 
-- `numpy`: numerical computation.
-- `jupyter`: notebook-based experiments.
-- `matplotlib`: plotting and visualization.
-- `pytest`: automated testing.
-
-Refer to the relevant semester project README for additional setup instructions.
-For the first-semester MyDeZero project, install the local package from the
-repository root:
+使用环境中的 Python 安装基础依赖和 MyDeZero：
 
 ```bash
-python3 -m pip install -e ./projl/proj
+python -m pip install numpy jupyter matplotlib pytest
+python -m pip install -e ./projl/proj
+python -m pytest projl/proj/tests
 ```
 
-## Testing
+小组需统一 Python 与依赖版本，当前跨平台兼容性仍待验证。
+DonkeyCar 下载、安装及 Windows 无需激活环境的用法见 [环境说明](doc/donkeycar-setup.md)。
+MyDeZero 详情见 [项目 README](projl/proj/README.md)。
 
-Run the first-semester MyDeZero test suite from its project directory:
+## 小组协作
 
-```bash
-cd projl/proj
-python3 -m pytest tests
-```
-
-See [the MyDeZero README](projl/proj/README.md) for individual test groups and
-optional Graphviz support.
-
-## Collaboration
-
-The team uses personal development branches named `dev/<github-username>` and
-pull requests targeting `master`. OrbisLumen and Booyean are the designated PR
-reviewers and merge maintainers.
-
-The [Git and GitHub collaboration policy](doc/collaboration.md) defines branch
-naming, contributor responsibilities, commit conventions, review procedures, and
-the proposed configuration for restricting updates to `master`. The document
-distinguishes team policy from GitHub settings that still require implementation.
-
-## Working Guidelines
-
-- Read the applicable `request/` requirements before starting an assignment.
-- Use the corresponding `reference/` directory for supporting materials.
-- Keep assignments in the appropriate `work/hw*/` directory and semester project
-  implementations in `proj/`.
-- Keep changes scoped to the relevant task and semester.
-- Consult [AGENTS.md](AGENTS.md) and any applicable directory-specific guidelines.
+个人分支 `dev/<github用户名>` → PR → 负责人审查 → 合并至 `master`。
+OrbisLumen、Booyean 负责审查与合并；具体操作及权限配置状态见 [协作规范](doc/collaboration.md)。
+个人环境、模拟器、数据和模型权重不提交 Git。

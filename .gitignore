@@ -1,6 +1,9 @@
 # Reference materials
 reference/
 
+# Local third-party tools and simulator binaries
+/tools/
+
 # Big data
 data/
 draft/
