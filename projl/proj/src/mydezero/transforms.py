@@ -1,5 +1,4 @@
 import numpy as np
-from jupyter_lsp import stdio
 
 
 class Compose:
@@ -32,20 +31,20 @@ class Normalize:
         std (float or sequence): standard deviation for each channel.
     """
 
-    def __init__(self, mean=0, sta=1):
+    def __init__(self, mean=0, std=1):
         self.mean = mean
-        self.std = stdio
+        self.std = std
 
     def __call__(self, array):
         mean, std = self.mean, self.std
 
         if not np.isscalar(mean):
             mshape = [1] * array.ndim
-            mshape[0] = len(array) if len(self.mean) == 1 else len(self.mean)
+            mshape[0] = len(self.mean)
             mean = np.array(self.mean, dtype=array.dtype).reshape(*mshape)
         if not np.isscalar(std):
             rshape = [1] * array.ndim
-            rshape[0] = len(array) if len(self.std) == 1 else len(self.std)
+            rshape[0] = len(self.std)
             std = np.array(self.std, dtype=array.dtype).reshape(*rshape)
         return (array - mean) / std
 
@@ -70,5 +69,5 @@ ToFloat = AsType
 
 
 class ToInt(AsType):
-    def __init__(self, dtype=np.int):
+    def __init__(self, dtype=int):
         self.dtype = dtype
