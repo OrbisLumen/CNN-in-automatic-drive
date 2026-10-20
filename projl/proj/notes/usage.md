@@ -66,7 +66,7 @@ probabilities. It subtracts the maximum before exponentiation to avoid overflow.
 For a 1D input, specify `axis=0`. Other NumPy axes, including negative axes,
 tuples, and `None`, are also supported.
 
-Pass unnormalized logits directly to `F.softmax_cross_entropy_loss(x, t)`.
+Pass unnormalized logits directly to `F.softmax_cross_entropy(x, t)`.
 The loss centers logits before computing log probabilities and returns the mean
 negative log probability over the batch. Logits must have nonempty shape `(N, C)`;
 labels must be integer class indices in `[0, C)` with shape `(N,)` or `(N, 1)`.
@@ -80,7 +80,7 @@ import mydezero.functions as F
 
 logits = Variable(np.zeros((2, 3), dtype=np.float32))
 labels = np.array([[0], [2]], dtype=np.int64)
-loss = F.softmax_cross_entropy_loss(logits, labels)
+loss = F.softmax_cross_entropy(logits, labels)
 loss.backward()
 
 np.testing.assert_allclose(loss.data, np.log(3), rtol=1e-6)
