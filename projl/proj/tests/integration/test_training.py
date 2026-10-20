@@ -65,11 +65,11 @@ def test_softmax_cross_entropy_trains_a_classifier_with_momentum():
     model.l0.W.data = np.zeros((1, 2), dtype=np.float32)
     model.l0.b.data[:] = 0
     optimizer = MomentumSGD(lr=0.1, momentum=0.5).setup(model)
-    initial_loss = float(F.softmax_cross_entropy_loss(model(x), labels).data)
+    initial_loss = float(F.softmax_cross_entropy(model(x), labels).data)
 
     for _ in range(30):
         model.cleargrads()
-        loss = F.softmax_cross_entropy_loss(model(x), labels)
+        loss = F.softmax_cross_entropy(model(x), labels)
         loss.backward()
         for param in model.params():
             assert param.grad.shape == param.shape
@@ -77,5 +77,5 @@ def test_softmax_cross_entropy_trains_a_classifier_with_momentum():
         optimizer.update()
 
     logits = model(x)
-    assert float(F.softmax_cross_entropy_loss(logits, labels).data) < initial_loss * 0.25
+    assert float(F.softmax_cross_entropy(logits, labels).data) < initial_loss * 0.25
     np.testing.assert_array_equal(logits.data.argmax(axis=1), labels)
