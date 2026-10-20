@@ -133,3 +133,18 @@ def test_single_class_cross_entropy_is_zero():
 
     np.testing.assert_allclose(loss.data, 0)
     np.testing.assert_allclose(x.grad.data, np.zeros_like(x.data))
+
+
+@pytest.mark.parametrize('column_labels', [False, True])
+@pytest.mark.parametrize('wrapped', [False, True])
+def test_accuracy_counts_argmax_predictions_without_gradients(column_labels, wrapped):
+    logits = np.array([[1., 3., 0.], [4., 4., 0.], [0., 2., 5.]])
+    labels = np.array([1, 1, 2])
+    if column_labels:
+        labels = labels[:, None]
+    x, t = (Variable(logits), Variable(labels)) if wrapped else (logits, labels)
+    result = F.accuracy(x, t)
+    np.testing.assert_allclose(result.data, 2 / 3)
+    assert result.shape == () and result.creator is None
+    if wrapped:
+        assert x.grad is None and t.grad is None
