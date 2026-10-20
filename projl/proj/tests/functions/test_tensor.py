@@ -115,3 +115,48 @@ def test_get_item_preserves_second_order_gradients_with_repeated_indices():
     first_grad.sum().backward()
 
     np.testing.assert_allclose(x.grad.data, [24.0, 0.0, 30.0])
+
+
+def test_broadcast_to_sums_gradients_back_to_original_shape():
+    x = Variable(np.array([[2., 3., 4.]]))
+    y = F.broadcast_to(x, (2, 3))
+    weights = np.arange(6.).reshape(2, 3)
+    (y * weights).sum().backward()
+    np.testing.assert_array_equal(y.data, np.tile(x.data, (2, 1)))
+    np.testing.assert_array_equal(x.grad.data, weights.sum(axis=0, keepdims=True))
+    assert F.broadcast_to(x, x.shape) is x
+    assert F.sum_to(x, x.shape) is x
+
+
+def test_mse_normalizes_by_batch_and_differentiates_both_inputs():
+    x = Variable(np.array([[1., 3.], [2., 4.]]))
+    t = Variable(np.array([[0., 1.], [1., 2.]]))
+    loss = F.mean_squared_error(x, t)
+    (loss * 3).backward()
+    np.testing.assert_allclose(loss.data, 5.)
+    np.testing.assert_array_equal(x.grad.data, 3 * (x.data - t.data))
+    np.testing.assert_array_equal(t.grad.data, -x.grad.data)
+
+
+@pytest.mark.parametrize('bias', [False, True])
+def test_linear_weighted_backward_matches_matrix_derivatives(bias):
+    x = Variable(np.arange(6.).reshape(2, 3))
+    w = Variable(np.arange(6.).reshape(3, 2))
+    b = Variable(np.array([1., -2.])) if bias else None
+    weights = np.array([[1., 2.], [3., 4.]])
+    y = F.linear(x, w, b)
+    (y * weights).sum().backward()
+    np.testing.assert_allclose(y.data, x.data @ w.data + (b.data if bias else 0))
+    np.testing.assert_allclose(x.grad.data, weights @ w.data.T)
+    np.testing.assert_allclose(w.grad.data, x.data.T @ weights)
+    if bias:
+        np.testing.assert_allclose(b.grad.data, weights.sum(axis=0))
+
+
+def test_explicit_transpose_axes_and_backward():
+    x = Variable(np.arange(24.).reshape(2, 3, 4))
+    weights = np.arange(24.).reshape(4, 2, 3)
+    y = x.transpose(2, 0, 1)
+    (y * weights).sum().backward()
+    np.testing.assert_array_equal(y.data, np.transpose(x.data, (2, 0, 1)))
+    np.testing.assert_array_equal(x.grad.data, weights.transpose(1, 2, 0))

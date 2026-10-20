@@ -25,3 +25,19 @@ def test_backprop_is_restored_after_context():
     y = square(x)
 
     assert y.creator is not None
+
+
+def test_nested_context_and_exception_restore_configuration():
+    from mydezero import Config, no_grad
+
+    original = Config.enable_backprop
+    try:
+        with no_grad():
+            assert Config.enable_backprop is False
+            with using_config('enable_backprop', True):
+                assert Config.enable_backprop is True
+            assert Config.enable_backprop is False
+            raise RuntimeError('test context cleanup')
+    except RuntimeError:
+        pass
+    assert Config.enable_backprop == original

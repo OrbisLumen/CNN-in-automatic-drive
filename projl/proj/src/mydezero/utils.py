@@ -1,5 +1,8 @@
 """Graphviz visualization and array helpers for reduction gradients."""
 
+import os
+import urllib.request
+from urllib.parse import urlsplit
 from pathlib import Path
 import subprocess
 import numpy as np
@@ -222,3 +225,62 @@ def max_backward_shape(x, axis):
         axis = (axis,)
     axes = tuple(a + x.ndim if a < 0 else a for a in axis)
     return tuple(1 if i in axes else size for i, size in enumerate(x.shape))
+
+
+# =============================================================================
+# download function
+# =============================================================================
+def show_progress(block_num, block_size, total_size):
+    """Print urlretrieve progress; show byte counts when total_size <= 0."""
+    downloaded = block_num * block_size
+    if total_size <= 0:
+        print("\r{} bytes downloaded".format(downloaded), end='', flush=True)
+        return
+
+    ratio = min(max(downloaded / total_size, 0.0), 1.0)
+    i = int(ratio * 30)
+    bar = "#" * i + "." * (30 - i)
+    print("\r[{}] {:.2f}%".format(bar, ratio * 100), end='', flush=True)
+
+
+def get_file(url, file_name=None, cache_dir=None):
+    """Download a file from the `url` if it is not in the cache.
+
+    The file at the `url` is downloaded to the `~/.mydezero` (by default).
+
+    Args:
+        url (str): URL of the file.
+        file_name (str): Name of the file. If `None` is specified the original
+            file name is used.
+        cache_dir (str): Directory to cache the downloaded file. If `None`, using
+            `~/.mydezero`.
+
+    Existing files are reused without validation. New downloads are saved in
+    this directory; failed or interrupted downloads are removed and the error
+    is re-raised. A default filename comes from the URL path, excluding queries.
+
+    Returns:
+        str: Absolute path to the saved file.
+    """
+    if cache_dir is None:
+        cache_dir = os.path.join(os.path.expanduser('~'), '.mydezero')
+    cache_dir = os.path.abspath(os.path.expanduser(cache_dir))
+    if file_name is None:
+        file_name = urlsplit(url).path.rsplit('/', 1)[-1]
+    file_path = os.path.join(cache_dir, file_name)
+
+    os.makedirs(cache_dir, exist_ok=True)
+
+    if os.path.exists(file_path):
+        return file_path
+
+    print("Downloading: " + file_name)
+    try:
+        urllib.request.urlretrieve(url, file_path, show_progress)
+    except (Exception, KeyboardInterrupt):
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        raise
+    print(" Done")
+
+    return file_path

@@ -1,7 +1,7 @@
 """Differentiable NumPy operations and optimization benchmark functions."""
 
 import numpy as np
-from mydezero.core import Function, as_variable
+from mydezero.core import Function, as_variable, as_array, Variable
 from mydezero import utils
 
 
@@ -579,7 +579,7 @@ class SoftmaxCrossEntropy(Function):
         return y
 
 
-def softmax_cross_entropy_loss(x, t):
+def softmax_cross_entropy(x, t):
     """Compute batch-averaged softmax cross entropy from unnormalized logits.
 
     Args:
@@ -595,7 +595,29 @@ def softmax_cross_entropy_loss(x, t):
 
 
 # =============================================================================
-# activation function: sigmoid, softmax
+# accuracy
+# =============================================================================
+def accuracy(y, t):
+    """Return mean classification accuracy without a differentiation graph.
+
+    Args:
+        y (Variable or np.ndarray): Nonempty scores of shape (N, C). Ties select
+            the first maximum, following NumPy argmax.
+        t (Variable or np.ndarray): Class indices of shape (N,) or (N, 1).
+
+    Returns:
+        Variable: Scalar fraction of correct predictions; not differentiable.
+    """
+    y, t = as_variable(y), as_variable(t)
+
+    pred = y.data.argmax(axis=1).reshape(t.shape)
+    result = (pred == t.data)
+    acc = result.mean()
+    return Variable(as_array(acc))
+
+
+# =============================================================================
+# activation function: sigmoid, softmax， ReLU
 # =============================================================================
 
 def sigmoid_simple(x):
@@ -681,6 +703,23 @@ def softmax(x, axis=1):
             the selected axes.
     """
     return Softmax(axis)(x)
+
+class ReLU(Function):
+    """Clamp negative values to zero; use zero derivative at the origin."""
+
+    def forward(self, x):
+        y = np.maximum(x, 0.0)
+        return y
+
+    def backward(self, gy):
+        x, = self.inputs
+        mask = x.data > 0
+        gx = gy * mask
+        return gx
+
+def relu(x):
+    """Apply max(x, 0) elementwise, preserving shape and the gradient graph."""
+    return ReLU()(x)
 
 
 # =============================================================================

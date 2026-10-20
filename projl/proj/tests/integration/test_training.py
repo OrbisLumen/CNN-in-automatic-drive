@@ -65,11 +65,11 @@ def test_softmax_cross_entropy_trains_a_classifier_with_momentum():
     model.l0.W.data = np.zeros((1, 2), dtype=np.float32)
     model.l0.b.data[:] = 0
     optimizer = MomentumSGD(lr=0.1, momentum=0.5).setup(model)
-    initial_loss = float(F.softmax_cross_entropy_loss(model(x), labels).data)
+    initial_loss = float(F.softmax_cross_entropy(model(x), labels).data)
 
     for _ in range(30):
         model.cleargrads()
-        loss = F.softmax_cross_entropy_loss(model(x), labels)
+        loss = F.softmax_cross_entropy(model(x), labels)
         loss.backward()
         for param in model.params():
             assert param.grad.shape == param.shape
@@ -77,5 +77,39 @@ def test_softmax_cross_entropy_trains_a_classifier_with_momentum():
         optimizer.update()
 
     logits = model(x)
-    assert float(F.softmax_cross_entropy_loss(logits, labels).data) < initial_loss * 0.25
+    assert float(F.softmax_cross_entropy(logits, labels).data) < initial_loss * 0.25
     np.testing.assert_array_equal(logits.data.argmax(axis=1), labels)
+
+
+def test_dataset_loader_classifier_training_and_weighted_evaluation():
+    from mydezero import DataLoader, Dataset, no_grad
+    from mydezero.models import MLP
+    from mydezero.optimizers import SGD
+
+    class ClassificationData(Dataset):
+        def prepare(self):
+            self.data = np.array([[-2.], [-1.], [1.], [2.], [3.]], dtype=np.float32)
+            self.label = np.array([0, 0, 1, 1, 1])
+
+    dataset = ClassificationData()
+    loader = DataLoader(dataset, batch_size=2, shuffle=False)
+    model = MLP((2,))
+    model(np.zeros((1, 1), dtype=np.float32))
+    model.l0.W.data[:] = 0
+    model.l0.b.data[:] = 0
+    optimizer = SGD(lr=0.2).setup(model)
+    for _ in range(10):
+        for x, t in loader:
+            model.cleargrads()
+            loss = F.softmax_cross_entropy(model(x), t)
+            loss.backward()
+            optimizer.update()
+    correct = count = 0
+    with no_grad():
+        for x, t in loader:
+            y = model(x)
+            assert y.creator is None
+            correct += float(F.accuracy(y, t).data) * len(t)
+            count += len(t)
+    assert count == len(dataset)
+    assert correct / count == 1.0

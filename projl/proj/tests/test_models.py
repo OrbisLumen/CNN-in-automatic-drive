@@ -96,3 +96,22 @@ def test_single_layer_mlp_does_not_apply_activation():
     model.l0.b.data[:] = -1
 
     np.testing.assert_allclose(model(x).data, [[5]])
+
+
+def test_model_plot_forwards_input_and_filename(monkeypatch):
+    from mydezero import utils
+    from mydezero.models import MLP
+
+    model = MLP((2,))
+    x = np.zeros((3, 4), dtype=np.float32)
+    calls = []
+    sentinel = object()
+
+    def render(output, verbose, to_file):
+        calls.append((output, verbose, to_file))
+        return sentinel
+
+    monkeypatch.setattr(utils, 'plot_dot_graph', render)
+    assert model.plot(x, to_file='custom.png') is sentinel
+    output, verbose, filename = calls[0]
+    assert output.shape == (3, 2) and verbose is True and filename == 'custom.png'

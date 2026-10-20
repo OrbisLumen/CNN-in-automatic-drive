@@ -64,7 +64,7 @@ def test_cross_entropy_forward_backward_shape_dtype_and_label_gradients(dtype, c
     labels = np.array([2, 0], dtype=np.int64)
     t = Variable(labels[:, None] if column_labels else labels.copy())
 
-    loss = F.softmax_cross_entropy_loss(x, t)
+    loss = F.softmax_cross_entropy(x, t)
     loss.backward()
 
     np.testing.assert_allclose(loss.data, -np.log(0.5 * 0.6) / 2, rtol=1e-6)
@@ -82,7 +82,7 @@ def test_scaled_cross_entropy_matches_numerical_gradient(labels):
     x = Variable(data.copy())
 
     def objective(values):
-        return F.softmax_cross_entropy_loss(values, labels) * 3.5
+        return F.softmax_cross_entropy(values, labels) * 3.5
 
     objective(x).backward()
 
@@ -93,7 +93,7 @@ def test_cross_entropy_supports_second_order_directional_derivatives():
     probabilities = np.array([[0.2, 0.3, 0.5], [0.6, 0.1, 0.3]])
     x = Variable(np.log(probabilities))
     direction = np.array([[1.0, -2.0, 0.5], [-0.5, 1.0, 2.0]])
-    F.softmax_cross_entropy_loss(x, np.array([2, 0])).backward(create_graph=True)
+    F.softmax_cross_entropy(x, np.array([2, 0])).backward(create_graph=True)
     first_grad = x.grad
     x.cleargrad()
 
@@ -109,7 +109,7 @@ def test_cross_entropy_supports_second_order_directional_derivatives():
 def test_cross_entropy_retains_accuracy_for_large_identical_logits(dtype, offset):
     x = Variable(np.full((2, 3), offset, dtype=dtype))
     with np.errstate(over='raise', invalid='raise', divide='raise'):
-        loss = F.softmax_cross_entropy_loss(x, np.array([0, 2]))
+        loss = F.softmax_cross_entropy(x, np.array([0, 2]))
         loss.backward()
 
     np.testing.assert_allclose(loss.data, np.log(3), rtol=1e-6)
@@ -119,7 +119,7 @@ def test_cross_entropy_retains_accuracy_for_large_identical_logits(dtype, offset
 def test_cross_entropy_handles_underflowed_probabilities():
     x = Variable(np.array([[1000.0, -1000.0, 0.0], [-1000.0, 1000.0, 0.0]]))
     with np.errstate(over='raise', invalid='raise', divide='raise'):
-        loss = F.softmax_cross_entropy_loss(x, np.array([1, 1]))
+        loss = F.softmax_cross_entropy(x, np.array([1, 1]))
         loss.backward()
 
     np.testing.assert_allclose(loss.data, 1000.0)
@@ -128,8 +128,23 @@ def test_cross_entropy_handles_underflowed_probabilities():
 
 def test_single_class_cross_entropy_is_zero():
     x = Variable(np.array([[3.0], [-4.0]]))
-    loss = F.softmax_cross_entropy_loss(x, np.array([0, 0]))
+    loss = F.softmax_cross_entropy(x, np.array([0, 0]))
     loss.backward()
 
     np.testing.assert_allclose(loss.data, 0)
     np.testing.assert_allclose(x.grad.data, np.zeros_like(x.data))
+
+
+@pytest.mark.parametrize('column_labels', [False, True])
+@pytest.mark.parametrize('wrapped', [False, True])
+def test_accuracy_counts_argmax_predictions_without_gradients(column_labels, wrapped):
+    logits = np.array([[1., 3., 0.], [4., 4., 0.], [0., 2., 5.]])
+    labels = np.array([1, 1, 2])
+    if column_labels:
+        labels = labels[:, None]
+    x, t = (Variable(logits), Variable(labels)) if wrapped else (logits, labels)
+    result = F.accuracy(x, t)
+    np.testing.assert_allclose(result.data, 2 / 3)
+    assert result.shape == () and result.creator is None
+    if wrapped:
+        assert x.grad is None and t.grad is None

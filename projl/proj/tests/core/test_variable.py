@@ -40,3 +40,17 @@ def test_variable_reshape_backward_restores_input_shape():
     y.backward(retain_grad=True)
 
     np.testing.assert_array_equal(x.grad.data, np.ones_like(x.data))
+
+
+def test_conversion_helpers_preserve_arrays_and_variables():
+    from mydezero.core import as_array, as_variable
+
+    data = np.array([1., 2.])
+    x = Variable(data)
+    assert as_array(data) is data
+    assert as_variable(x) is x
+    assert as_variable(data).data is data
+    scalar = as_array(3.)
+    assert isinstance(scalar, np.ndarray) and scalar.shape == ()
+    assert Variable(None).data is None
+    assert len(x) == 2

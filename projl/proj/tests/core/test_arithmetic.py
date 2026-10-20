@@ -94,3 +94,32 @@ def test_add_forward():
     y = add(x0, x1)
 
     np.testing.assert_allclose(y.data, np.array(5.0))
+
+
+@pytest.mark.parametrize('operation', ['add', 'sub', 'mul', 'div'])
+def test_broadcast_arithmetic_gradients(operation):
+    x = Variable(np.array([[2., 4., 8.], [3., 6., 9.]]))
+    b = Variable(np.array([1., 2., 3.]))
+    if operation == 'add':
+        y = x + b
+        gx, gb = np.ones_like(x.data), np.full(3, 2.)
+    elif operation == 'sub':
+        y = x - b
+        gx, gb = np.ones_like(x.data), np.full(3, -2.)
+    elif operation == 'mul':
+        y = x * b
+        gx, gb = np.broadcast_to(b.data, x.shape), x.data.sum(axis=0)
+    else:
+        y = x / b
+        gx, gb = np.broadcast_to(1 / b.data, x.shape), (-x.data / b.data ** 2).sum(axis=0)
+    y.sum().backward()
+    np.testing.assert_allclose(x.grad.data, gx)
+    np.testing.assert_allclose(b.grad.data, gb)
+
+
+def test_reverse_division_and_negation_gradients():
+    x = Variable(np.array([2., 4.]))
+    y = -(8 / x)
+    y.sum().backward()
+    np.testing.assert_allclose(y.data, [-4., -2.])
+    np.testing.assert_allclose(x.grad.data, 8 / x.data ** 2)

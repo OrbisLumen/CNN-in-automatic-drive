@@ -80,3 +80,44 @@ def test_tanh_forward_and_backward():
 
     np.testing.assert_allclose(x.grad.data, 0.07065082)
     np.testing.assert_allclose(y.data, 0.96402758)
+
+
+def test_cos_forward_and_backward():
+    x = Variable(np.array([-1.2, 0., 0.7]))
+    y = F.cos(x)
+    y.sum().backward()
+    np.testing.assert_allclose(y.data, np.cos(x.data))
+    np.testing.assert_allclose(x.grad.data, -np.sin(x.data))
+
+
+def test_sigmoid_simple_matches_optimized_value_and_gradient():
+    x = Variable(np.array([-2., 0., 3.]))
+    y = F.sigmoid_simple(x)
+    y.sum().backward()
+    expected = 1 / (1 + np.exp(-x.data))
+    np.testing.assert_allclose(y.data, expected)
+    np.testing.assert_allclose(x.grad.data, expected * (1 - expected))
+
+
+@pytest.mark.parametrize('dtype', [np.float32, np.float64])
+def test_relu_forward_backward_zero_boundary_and_input_preservation(dtype):
+    data = np.array([[-2., 0., 3.], [1., -1., 0.]], dtype=dtype)
+    original = data.copy()
+    x = Variable(data)
+    y = F.relu(x)
+    weights = np.array([[1., 2., 3.], [4., 5., 6.]], dtype=dtype)
+    (y * weights).sum().backward()
+    np.testing.assert_array_equal(y.data, [[0, 0, 3], [1, 0, 0]])
+    np.testing.assert_array_equal(x.grad.data, [[0, 0, 3], [4, 0, 0]])
+    np.testing.assert_array_equal(data, original)
+    assert y.shape == x.shape and y.dtype == dtype
+    assert x.grad.dtype == dtype
+
+
+def test_relu_second_derivative_of_squared_output():
+    x = Variable(np.array([-2., 0., 3.]))
+    (F.relu(x) ** 2).sum().backward(create_graph=True)
+    first = x.grad
+    x.cleargrad()
+    first.sum().backward()
+    np.testing.assert_array_equal(x.grad.data, [0, 0, 2])

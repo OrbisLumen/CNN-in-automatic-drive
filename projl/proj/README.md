@@ -32,6 +32,14 @@ pip3 install -e .
 
 This make sure the jupyter and others know which package is mydezero.
 
+## Documentation and Examples
+
+- [API and feature index](notes/api.md)
+- [Usage and gradient conventions](notes/usage.md)
+- [Datasets, transforms, and mini-batches](notes/data.md)
+- [Test coverage and verification](notes/testing.md)
+- [Jupyter examples](examples/README.md)
+
 ## Run Tests
 
 Run the tests from the `projl/proj` directory:

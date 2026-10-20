@@ -109,3 +109,23 @@ def test_second_backward_accumulates_existing_gradient():
 
     # The first gradient remains: 24 + (12 * x**2 - 4) = 68 at x = 2.
     np.testing.assert_allclose(x.grad.data, 68.0)
+
+
+def test_custom_multi_output_function_and_retained_gradients():
+    from mydezero import Function
+
+    class Powers(Function):
+        def forward(self, x):
+            return x ** 2, x ** 3
+
+        def backward(self, gy2, gy3):
+            x, = self.inputs
+            return gy2 * 2 * x + gy3 * 3 * x ** 2
+
+    x = Variable(np.array(2.))
+    square_output, cube_output = Powers()(x)
+    loss = square_output + cube_output
+    loss.backward(retain_grad=True)
+    np.testing.assert_allclose(x.grad.data, 16.)
+    for output in (square_output, cube_output, loss):
+        np.testing.assert_allclose(output.grad.data, 1.)
