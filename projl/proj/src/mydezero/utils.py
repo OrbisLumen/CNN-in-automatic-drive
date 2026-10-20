@@ -231,6 +231,7 @@ def max_backward_shape(x, axis):
 # download function
 # =============================================================================
 def show_progress(block_num, block_size, total_size):
+    """Print urlretrieve progress; show byte counts when total_size <= 0."""
     downloaded = block_num * block_size
     if total_size <= 0:
         print("\r{} bytes downloaded".format(downloaded), end='', flush=True)
@@ -253,6 +254,10 @@ def get_file(url, file_name=None, cache_dir=None):
             file name is used.
         cache_dir (str): Directory to cache the downloaded file. If `None`, using
             `~/.mydezero`.
+
+    Existing files are reused without validation. New downloads are saved in
+    this directory; failed or interrupted downloads are removed and the error
+    is re-raised. A default filename comes from the URL path, excluding queries.
 
     Returns:
         str: Absolute path to the saved file.

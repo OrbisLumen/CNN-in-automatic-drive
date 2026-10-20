@@ -1,9 +1,23 @@
+"""NumPy mini-batches with optional shuffling and automatic epoch reset."""
+
 import math
 import random
 import numpy as np
 
 
 class DataLoader:
+    """Iterate over a dataset in batches, including the final partial batch.
+
+    Args:
+        dataset (Dataset): Indexable collection of (sample, label) pairs.
+        batch_size (int): Positive number of samples per batch.
+        shuffle (bool): Shuffle indices initially and after each exhausted epoch.
+
+    Iteration returns two NumPy arrays. Unlabeled samples produce an object
+    label array containing None. Exhausting the iterator resets it for the next
+    epoch; stopping early requires reset to restart from the first batch.
+    """
+
     def __init__(self, dataset, batch_size, shuffle=True):
         self.dataset = dataset
         self.batch_size = batch_size
@@ -14,6 +28,7 @@ class DataLoader:
         self.reset()
 
     def reset(self):
+        """Restart the epoch and regenerate shuffled or sequential indices."""
         self.iteration = 0
         if self.shuffle:
             self.index = np.random.permutation(len(self.dataset))
@@ -38,4 +53,5 @@ class DataLoader:
         return x, t
 
     def next(self):
+        """Return the next batch; alias for the iterator protocol's next call."""
         return self.__next__()

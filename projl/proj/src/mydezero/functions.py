@@ -598,8 +598,15 @@ def softmax_cross_entropy(x, t):
 # accuracy
 # =============================================================================
 def accuracy(y, t):
-    """
-    [WAR] This function is not differentiable.
+    """Return mean classification accuracy without a differentiation graph.
+
+    Args:
+        y (Variable or np.ndarray): Nonempty scores of shape (N, C). Ties select
+            the first maximum, following NumPy argmax.
+        t (Variable or np.ndarray): Class indices of shape (N,) or (N, 1).
+
+    Returns:
+        Variable: Scalar fraction of correct predictions; not differentiable.
     """
     y, t = as_variable(y), as_variable(t)
 
@@ -698,6 +705,8 @@ def softmax(x, axis=1):
     return Softmax(axis)(x)
 
 class ReLU(Function):
+    """Clamp negative values to zero; use zero derivative at the origin."""
+
     def forward(self, x):
         y = np.maximum(x, 0.0)
         return y
@@ -709,6 +718,7 @@ class ReLU(Function):
         return gx
 
 def relu(x):
+    """Apply max(x, 0) elementwise, preserving shape and the gradient graph."""
     return ReLU()(x)
 
 

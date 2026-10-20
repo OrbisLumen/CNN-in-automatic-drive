@@ -1,3 +1,5 @@
+"""Composable transforms for individual NumPy samples."""
+
 import numpy as np
 
 
@@ -23,7 +25,10 @@ class Compose:
 # Transforms for NumPy ndarray
 # =============================================================================
 class Normalize:
-    """Normalize a NumPy array with mean and standard deviation.
+    """Compute (array - mean) / std using nonzero standard deviations.
+
+    Channel sequences broadcast along the first axis (channel-first data).
+    Convert integer pixels to floating point before normalization.
 
     Args:
         mean (float or sequence): mean for all values or sequence of means for
@@ -58,6 +63,11 @@ class Flatten:
 
 
 class AsType:
+    """Return an array converted to dtype (float32 by default).
+
+    ToFloat is an alias for this class and accepts the same dtype argument.
+    """
+
     def __init__(self, dtype=np.float32):
         self.dtype = dtype
 
@@ -69,5 +79,7 @@ ToFloat = AsType
 
 
 class ToInt(AsType):
+    """Convert an array to an integer dtype (platform int by default)."""
+
     def __init__(self, dtype=int):
         self.dtype = dtype

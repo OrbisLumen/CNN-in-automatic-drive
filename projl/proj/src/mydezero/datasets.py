@@ -1,3 +1,5 @@
+"""In-memory datasets and MNIST loading from cached IDX/GZIP files."""
+
 import gzip
 import numpy as np
 from matplotlib import pyplot as plt
@@ -7,6 +9,20 @@ from mydezero.transforms import Compose, Flatten, ToFloat, Normalize
 
 
 class Dataset:
+    """Prepare data once and transform individual samples on access.
+
+    Subclasses implement prepare, assigning data and optionally label arrays.
+
+    Args:
+        train (bool): Select the training split when supported by the subclass.
+        transform (Callable or None): Transform applied to each data sample.
+        target_transform (Callable or None): Transform applied to each label.
+
+    Attributes:
+        data (np.ndarray or None): Raw samples populated by prepare.
+        label (np.ndarray or None): Labels; None denotes unlabeled data.
+    """
+
     def __init__(self, train=True, transform=None, target_transform=None):
         self.train = train
         self.transform = transform
@@ -21,6 +37,7 @@ class Dataset:
         self.prepare()
 
     def __getitem__(self, index):
+        """Return a transformed (sample, label) pair for a scalar index."""
         assert np.isscalar(index)
         if self.label is None:
             return self.transform(self.data[index]), None
@@ -32,6 +49,7 @@ class Dataset:
         return len(self.data)
 
     def prepare(self):
+        """Populate raw data and labels; override in concrete datasets."""
         pass
 
 
@@ -39,6 +57,13 @@ class Dataset:
 # MNIST-like dataset: MNIST
 # =============================================================================
 class MNIST(Dataset):
+    """Load the training or test split of handwritten digits into memory.
+
+    Downloads are cached under ~/.mydezero. Raw data has shape (N, 1, 28, 28)
+    and dtype uint8. The default transform returns a float32 vector of length
+    784 scaled to [0, 1]. Pass transform=None to access raw images instead.
+    Labels are uint8 class indices. Arguments follow Dataset.
+    """
 
     def __init__(self, train=True, transform=Compose([Flatten(), ToFloat(),
                                                       Normalize(0., 255.)]),
@@ -71,6 +96,7 @@ class MNIST(Dataset):
         return data
 
     def show(self, row=10, col=10):
+        """Display a row-by-col grid of raw images sampled with replacement."""
         H, W = 28, 28
         img = np.zeros((H * row, W * col))
         for r in range(row):
@@ -83,4 +109,5 @@ class MNIST(Dataset):
 
     @staticmethod
     def labels():
+        """Return the digit class index to display-name mapping."""
         return {0: '0', 1: '1', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8', 9: '9'}

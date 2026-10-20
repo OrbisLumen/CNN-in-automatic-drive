@@ -1,5 +1,8 @@
 # Usage and Implementation Notes
 
+See the [complete API index](api.md), [datasets and mini-batches](data.md),
+and [test coverage guide](testing.md) for the rest of the current framework.
+
 ## Indexing, Composed Models, and Momentum
 
 Use `get_item` for differentiable NumPy indexing:
@@ -133,11 +136,14 @@ MyDeZero currently implements a NumPy subset of that framework:
 | Module | Current implementation | Scope compared with DeZero |
 | --- | --- | --- |
 | `core.py` | Variable, Parameter, Function, graph configuration, arithmetic, higher-order differentiation | Uses a generation heap for backward traversal; NumPy only |
-| `functions.py` | Elementary functions, tensor operations, squared error, softmax cross entropy, sigmoid, softmax, max/min, and clip | NumPy indexing supports repeated-index gradient accumulation and higher-order differentiation; matrix multiplication and linear transforms support 2D batches; classification loss accepts integer labels and averages over the batch |
+| `functions.py` | Elementary functions, tensor operations, squared error, softmax cross entropy, sigmoid, ReLU, softmax, max/min, and clip | NumPy indexing supports repeated-index gradient accumulation and higher-order differentiation; matrix multiplication and linear transforms support 2D batches; classification loss accepts integer labels and averages over the batch |
 | `layers.py` | Recursive parameter collection and Linear with optional bias and deferred initialization | Convolution, recurrent layers, and weight serialization remain unimplemented |
 | `models.py` | Model base class, graph visualization, Sequential, and MLP | Pretrained networks remain unimplemented |
 | `optimizers.py` | Optimizer base class, hooks, SGD, and MomentumSGD | Other update rules and built-in hooks remain unimplemented |
-| `utils.py` | DOT graph generation, rendering, reduction gradient helpers, and stable logsumexp | Numerical helpers use NumPy; visualization lives here; `graph.py` is currently empty |
+| `datasets.py` | Dataset base class and cached MNIST loading, raw image preview | Entire split is loaded in memory; transforms run per sample |
+| `dataloaders.py` | Shuffled or sequential NumPy mini-batches | Includes partial final batches and resets after exhaustion |
+| `transforms.py` | Compose, Flatten, Normalize, AsType/ToFloat, ToInt | NumPy sample transforms; channel-first normalization |
+| `utils.py` | DOT graph generation, rendering, reduction gradient helpers, stable logsumexp, downloads and progress | Downloads use a local disk cache; numerical helpers use NumPy; `graph.py` is currently empty |
 
 Library docstrings use Google style (`Args`, `Returns`, `Yields`, `Attributes`, and
 `Raises` where relevant). Function subclasses inherit the forward/backward contract
