@@ -46,7 +46,7 @@ class MNIST(Dataset):
         super().__init__(train, transform, target_transform)
 
     def prepare(self):
-        url = 'http://yann.lecun.com/exdb/mnist/'
+        url = 'https://storage.googleapis.com/cvdf-datasets/mnist/'
         train_files = {'target': 'train-images-idx3-ubyte.gz',
                        'label': 'train-labels-idx1-ubyte.gz'}
         test_files = {'target': 't10k-images-idx3-ubyte.gz',

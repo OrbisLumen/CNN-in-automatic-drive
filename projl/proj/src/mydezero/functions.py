@@ -1,7 +1,7 @@
 """Differentiable NumPy operations and optimization benchmark functions."""
 
 import numpy as np
-from mydezero.core import Function, as_variable
+from mydezero.core import Function, as_variable, as_array, Variable
 from mydezero import utils
 
 
@@ -579,7 +579,7 @@ class SoftmaxCrossEntropy(Function):
         return y
 
 
-def softmax_cross_entropy_loss(x, t):
+def softmax_cross_entropy(x, t):
     """Compute batch-averaged softmax cross entropy from unnormalized logits.
 
     Args:
@@ -592,6 +592,21 @@ def softmax_cross_entropy_loss(x, t):
         Variable: Scalar mean negative log probability of the target classes.
     """
     return SoftmaxCrossEntropy()(x, t)
+
+
+# =============================================================================
+# accuracy
+# =============================================================================
+def accuracy(y, t):
+    """
+    [WAR] This function is not differentiable.
+    """
+    y, t = as_variable(y), as_variable(t)
+
+    pred = y.data.argmax(axis=1).reshape(t.shape)
+    result = (pred == t.data)
+    acc = result.mean()
+    return Variable(as_array(acc))
 
 
 # =============================================================================
