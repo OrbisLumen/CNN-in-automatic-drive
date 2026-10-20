@@ -76,7 +76,7 @@ class MNIST(Dataset):
         for r in range(row):
             for c in range(col):
                 img[r * H:(r + 1) * H, c * W:(c + 1) * W] = self.data[
-                    np.random.randint(0, len(self.data) - 1)].reshape(H, W)
+                    np.random.randint(len(self.data))].reshape(H, W)
         plt.imshow(img, cmap='gray', interpolation='nearest')
         plt.axis('off')
         plt.show()
