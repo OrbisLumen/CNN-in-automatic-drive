@@ -80,9 +80,13 @@ git diff --stat origin/master...HEAD
 ```
 
 On GitHub, choose `base: master` and `compare: your personal branch`.
-Keep one task per PR. Describe the purpose, changes, verification commands, and
-results. Explain skipped tests. For cross-platform changes, list tested operating
-systems and Python versions.
+Follow these rules:
+
+- Keep one task per PR and exclude unrelated changes, environments, data, weights, and temporary outputs.
+- Write titles in English as `type(scope): description`, using `feat`, `fix`, `test`, `docs`, `refactor`, or `chore`. Example: `feat(data): add MNIST loader`.
+- Use the [PR template](../.github/pull_request_template.md) and write concise English descriptions of the purpose and main changes.
+- Record relevant test commands and results. If tests were not run, explain why. For cross-platform changes, list tested operating systems and Python versions.
+- Update documentation when APIs, usage, or configuration change. List updated files, or explain why no update is needed.
 
 Maintainers review correctness, tests, scope, and maintainability.
 `Comment` is not approval; address `Request changes`; `Approve` grants approval.
@@ -90,8 +94,7 @@ After `Start a review`, select `Submit review` to publish it.
 Push fixes to the same branch to update the PR. New changes require fresh approval.
 
 OrbisLumen or Booyean merges after approval, resolved discussions, relevant
-verification, and configured automated checks pass. Keep unrelated tasks out of
-an open PR.
+verification, and configured automated checks pass. Use **Create a merge commit**.
 
 ## Main Branch Permissions: Target and History
 
