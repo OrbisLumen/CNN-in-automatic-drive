@@ -255,10 +255,6 @@ class Variable:
         """Variable: Transpose with all axes reversed, following NumPy's T."""
         return mydezero.functions.transpose(self)
 
-    def sum(self, axis=None, keepdims=False):
-        """Variable: Differentiable sum, following NumPy's sum."""
-        return mydezero.functions.sum(self, axis, keepdims)
-
     def to_cpu(self):
         """Move the data to the CPU."""
         if self.data is not None:
