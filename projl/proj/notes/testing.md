@@ -50,7 +50,8 @@ The full MNIST notebook needs network access or cached data. Its five-epoch trai
 run is outside the default suite. Automated training tests use small deterministic
 data to check parameter updates and accuracy. Preview tests check image pixels and
 shape while replacing Matplotlib display calls. Graph rendering separately verifies
-a real PNG file.
+a real PNG file. GPU paths require CuPy and a CUDA device; they are not covered
+by the automated suite.
 
 Run Python snippets in each document from top to bottom. MNIST examples in
 `data.md` download and load real data; `show()` displays images. When adding APIs,
