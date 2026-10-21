@@ -3,6 +3,8 @@
 import math
 import random
 import numpy as np
+from mydezero import cuda
+
 
 
 class DataLoader:
@@ -18,12 +20,13 @@ class DataLoader:
     epoch; stopping early requires reset to restart from the first batch.
     """
 
-    def __init__(self, dataset, batch_size, shuffle=True):
+    def __init__(self, dataset, batch_size, shuffle=True, gpu=False):
         self.dataset = dataset
         self.batch_size = batch_size
         self.shuffle = shuffle
         self.data_size = len(dataset)
         self.max_iter = math.ceil(self.data_size / batch_size)
+        self.gpu = gpu
 
         self.reset()
 
@@ -39,6 +42,7 @@ class DataLoader:
         return self
 
     def __next__(self):
+        """Return the next batch, on CuPy when the GPU is enabled, as (x, t)."""
         if self.iteration >= self.max_iter:
             self.reset()
             raise StopIteration
@@ -46,8 +50,10 @@ class DataLoader:
         i, batch_size = self.iteration, self.batch_size
         batch_index = self.index[i * batch_size:(i + 1) * batch_size]
         batch = [self.dataset[i] for i in batch_index]
-        x = np.array([example[0] for example in batch])
-        t = np.array([example[1] for example in batch])
+
+        xp = cuda.cupy if self.gpu else np
+        x = xp.array([example[0] for example in batch])
+        t = xp.array([example[1] for example in batch])
 
         self.iteration += 1
         return x, t
@@ -55,3 +61,11 @@ class DataLoader:
     def next(self):
         """Return the next batch; alias for the iterator protocol's next call."""
         return self.__next__()
+
+    def to_cpu(self):
+        """Produce batches on the CPU."""
+        self.gpu = False
+
+    def to_gpu(self):
+        """Produce batches on the GPU; requires CuPy."""
+        self.gpu = True

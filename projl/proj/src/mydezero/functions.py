@@ -2,7 +2,8 @@
 
 import numpy as np
 from mydezero.core import Function, as_variable, as_array, Variable
-from mydezero import utils
+from mydezero import utils, cuda
+import mydezero
 
 
 # =============================================================================
@@ -40,7 +41,9 @@ class Exp(Function):
     """
 
     def forward(self, x):
-        return np.exp(x)
+        xp = cuda.get_array_module(x)
+        y = xp.exp(x)
+        return y
 
     def backward(self, gy):
         x, = self.inputs
@@ -116,7 +119,8 @@ class Sin(Function):
     """Compute the elementwise sine with a differentiable backward pass."""
 
     def forward(self, x):
-        y = np.sin(x)
+        xp = cuda.get_array_module(x)
+        y = xp.sin(x)
         return y
 
     def backward(self, gy):
@@ -141,7 +145,8 @@ class Cos(Function):
     """Compute the elementwise cosine with a differentiable backward pass."""
 
     def forward(self, x):
-        y = np.cos(x)
+        xp = cuda.get_array_module(x)
+        y = xp.cos(x)
         return y
 
     def backward(self, gy):
@@ -166,7 +171,8 @@ class Tanh(Function):
     """Compute the elementwise hyperbolic tangent with a differentiable backward pass."""
 
     def forward(self, x):
-        y = np.tanh(x)
+        xp = cuda.get_array_module(x)
+        y = xp.tanh(x)
         return y
 
     def backward(self, gy):
@@ -293,8 +299,9 @@ class GetItem(Function):
 class GetItemGrad(Function):
     """Accumulate indexing gradients, including repeated indices.
 
-    Uses np.add.at so repeated selections contribute once per occurrence.
-    Its backward pass gathers elements to support higher-order derivatives.
+    Uses np.add.at on CPU or scatter_add on GPU so repeated selections
+    contribute once per occurrence. Its backward pass gathers elements to
+    support higher-order derivatives.
 
     Args:
         slices (object): Index used in the corresponding GetItem operation.
@@ -306,8 +313,13 @@ class GetItemGrad(Function):
         self.in_shape = in_shape
 
     def forward(self, gy):
-        gx = np.zeros(self.in_shape, dtype=gy.dtype)
-        np.add.at(gx, self.slices, gy)
+        xp = mydezero.cuda.get_array_module(gy)
+        gx = xp.zeros(self.in_shape, dtype=gy.dtype)
+
+        if xp is np:
+            np.add.at(gx, self.slices, gy)
+        else:
+            xp.scatter_add(gx, self.slices, gy)
         return gx
 
     def backward(self, ggx):
@@ -431,7 +443,8 @@ class BroadcastTo(Function):
 
     def forward(self, x):
         self.x_shape = x.shape
-        y = np.broadcast_to(x, self.shape)
+        xp = mydezero.cuda.get_array_module(x)
+        y = xp.broadcast_to(x, self.shape)
         return y
 
     def backward(self, gy):
@@ -571,10 +584,11 @@ class SoftmaxCrossEntropy(Function):
         x, t = self.inputs
         N, CLS_NUM = x.shape
 
-        gy = gy / np.array(N, dtype=x.dtype)
+        gy = gy / N
         y = softmax(x)
 
-        t_onehot = np.eye(CLS_NUM, dtype=x.dtype)[t.data.ravel()]
+        xp = cuda.get_array_module(t.data)
+        t_onehot = xp.eye(CLS_NUM, dtype=x.dtype)[t.data.ravel()]
         y = (y - t_onehot) * gy
         return y
 
@@ -617,7 +631,7 @@ def accuracy(y, t):
 
 
 # =============================================================================
-# activation function: sigmoid, softmax， ReLU
+# activation function: sigmoid, softmax, ReLU
 # =============================================================================
 
 def sigmoid_simple(x):
@@ -644,7 +658,8 @@ class Sigmoid(Function):
     """
 
     def forward(self, x):
-        y = np.tanh(x * 0.5) * 0.5 + 0.5
+        xp = cuda.get_array_module(x)
+        y = xp.tanh(x * 0.5) * 0.5 + 0.5
         return y
 
     def backward(self, gy):
@@ -677,8 +692,9 @@ class Softmax(Function):
         self.axis = axis
 
     def forward(self, x):
+        xp = cuda.get_array_module(x)
         y = x - x.max(axis=self.axis, keepdims=True)
-        y = np.exp(y)
+        y = xp.exp(y)
         y /= y.sum(axis=self.axis, keepdims=True)
         return y
 
@@ -708,7 +724,8 @@ class ReLU(Function):
     """Clamp negative values to zero; use zero derivative at the origin."""
 
     def forward(self, x):
-        y = np.maximum(x, 0.0)
+        xp = cuda.get_array_module(x)
+        y = xp.maximum(x, 0.0)
         return y
 
     def backward(self, gy):
@@ -809,7 +826,8 @@ class Clip(Function):
         self.x_max = x_max
 
     def forward(self, x):
-        y = np.clip(x, self.x_min, self.x_max)
+        xp = cuda.get_array_module(x)
+        y = xp.clip(x, self.x_min, self.x_max)
         return y
 
     def backward(self, gy):
