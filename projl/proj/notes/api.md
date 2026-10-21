@@ -16,6 +16,7 @@ Import core objects from `mydezero`:
 | `shape`, `ndim`, `size`, `dtype`, `len(x)` | Underlying array properties |
 | `backward(retain_grad=False, create_graph=False)` | Starts with an all-ones gradient by default; repeated calls accumulate leaf gradients. Enable flags to retain intermediate gradients or build a gradient graph |
 | `cleargrad()` | Clears this variable's gradient; use `model.cleargrads()` for model parameters |
+| `to_cpu()`, `to_gpu()` | Move Variable data between CPU and GPU; CuPy is required for GPU |
 | `reshape(*shape)`, `transpose(*axes)`, `.T`, `sum(axis=None, keepdims=False)` | Differentiable shape operations and summation |
 | `+`, `-`, `*`, `/`, unary `-`, `**` | NumPy broadcasting and scalars on either side; exponents are constants |
 | `using_config(name, value)` | Temporarily sets a Config attribute; restores it after nesting or exceptions |
@@ -45,8 +46,8 @@ assert prediction.creator is None
 
 ## Functions
 
-Import from `mydezero.functions`, usually as `F`. Inputs accept Variables or NumPy
-arrays; outputs are Variables.
+Import from `mydezero.functions`, usually as `F`. Inputs accept Variables or
+NumPy/CuPy arrays; outputs are Variables.
 
 | API | Behavior and limits |
 | --- | --- |
@@ -78,6 +79,7 @@ Labels are class indices, not one-hot vectors. See [usage.md](usage.md) for deta
 | --- | --- |
 | `Layer` | Implement `forward`. Assign Parameters and child layers directly to attributes for registration; ordinary containers are not scanned |
 | `params()`, `cleargrads()` | Recursively collect parameters and clear gradients; traversal order is unspecified |
+| `Layer.to_cpu()`, `Layer.to_gpu()` | Move all parameters between CPU and GPU; CuPy is required for GPU |
 | `layers.Linear(out_size, nobias=False, dtype=np.float32, in_size=None)` | Owns W and optional b; infers input width on the first call if in_size is omitted |
 | `Model` | Extends Layer with graph plotting |
 | `Model.plot(*inputs, to_file='model.png')` | Runs forward and plots; paths are relative to the project's `draft/` |
@@ -90,7 +92,9 @@ Labels are class indices, not one-hot vectors. See [usage.md](usage.md) for deta
 | `optimizers.MomentumSGD(lr=0.01, momentum=0.9)` | Stores per-parameter velocity; `v = momentum*v - lr*grad`, `param += v` |
 
 Use floating-point parameter arrays. Reuse MomentumSGD across batches to retain
-momentum. Convolution, GPU, Dropout, weight saving, and pretrained networks are not implemented.
+momentum. With CuPy installed, variables, layers, optimizers, and DataLoader
+batches move to the GPU via `to_gpu()`/`to_cpu()`. Convolution, Dropout, weight
+saving, and pretrained networks are not implemented.
 
 ## Data and Utilities
 

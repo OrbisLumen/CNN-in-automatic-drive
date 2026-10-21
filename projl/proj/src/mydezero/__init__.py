@@ -24,7 +24,7 @@ import mydezero.functions
 # import mydezero.functions_conv
 import mydezero.layers
 import mydezero.utils
-# import mydezero.cuda
+import mydezero.cuda
 # import mydezero.transforms
 
 setup_variable()

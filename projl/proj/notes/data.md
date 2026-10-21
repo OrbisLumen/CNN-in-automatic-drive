@@ -80,10 +80,11 @@ mnist_transform = Compose([Flatten(), ToFloat(), Normalize(0, 255)])
 
 ## DataLoader and Evaluation
 
-`DataLoader(dataset, batch_size, shuffle=True)` returns `(x, t)` NumPy arrays,
-including a partial final batch. Use a positive integer batch_size.
+`DataLoader(dataset, batch_size, shuffle=True, gpu=False)` returns `(x, t)` NumPy
+or CuPy arrays, including a partial final batch. Use a positive integer batch_size.
 `shuffle=False` preserves order; otherwise a random permutation is generated
-at initialization and after exhaustion.
+at initialization and after exhaustion. `gpu=True` returns CuPy batches and
+requires CuPy; `loader.to_cpu()` and `loader.to_gpu()` switch the batch device.
 
 Exhaustion calls `reset()`, so the loader can be reused across epochs.
 Breaking early leaves the iterator at its current position; call `loader.reset()`

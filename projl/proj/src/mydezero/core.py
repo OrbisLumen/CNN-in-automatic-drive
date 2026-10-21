@@ -60,6 +60,12 @@ def no_grad():
 # =============================================================================
 # Variable, Function
 # =============================================================================
+"""CuPy support: allow Variable data to be NumPy or CuPy arrays."""
+try:
+    import cupy
+    array_types = (np.ndarray, cupy.ndarray)
+except ImportError:
+    array_types = (np.ndarray)
 
 class Variable:
     """Represents a variable in a computational graph.
@@ -69,8 +75,9 @@ class Variable:
     created it.
 
     Args:
-        data (np.ndarray or None): Array to wrap, or None for an uninitialized
-            parameter or an absent optional input. Scalars must be arrays.
+        data (np.ndarray, cupy.ndarray or None): Array to wrap, or None for an
+            uninitialized parameter or an absent optional input. Scalars must
+            be arrays.
         name (str or None): Optional name used in graph labels.
 
     Attributes:
@@ -86,16 +93,16 @@ class Variable:
         dtype (np.dtype): Data type of the initialized data.
 
     Raises:
-        TypeError: If data is neither a NumPy array nor None.
+        TypeError: If data is neither a NumPy/CuPy array nor None.
     """
 
     __array_priority__ = 200  # make Variable computation priority larger than ndarray
 
     def __init__(self, data, name=None):
-        # check input for numpy.ndarray
+        # Check the input array type (NumPy or CuPy).
         if data is not None:
-            if not isinstance(data, np.ndarray):
-                raise TypeError(f"{type(data)} is not supported, data must be a numpy array.")
+            if not isinstance(data, array_types):
+                raise TypeError(f"{type(data)} is not supported, data must be a numpy/cupy array.")
 
         self.data = data
         self.name = name
@@ -140,8 +147,9 @@ class Variable:
     def backward(self, retain_grad=False, create_graph=False):
         """Accumulate gradients through the graph in decreasing generation order.
 
-        If no output gradient is supplied, start with an array of ones. Calling
-        backward repeatedly accumulates gradients; use cleargrad to reset them.
+        If no output gradient is supplied, start with an array of ones on the
+        same device (CPU/GPU) as the data. Calling backward repeatedly
+        accumulates gradients; use cleargrad to reset them.
 
         Args:
             retain_grad (bool): Keep intermediate and output gradients when True.
@@ -151,7 +159,8 @@ class Variable:
         """
         # When being the backward startpoint, initializing the grad
         if self.grad is None:
-            self.grad = Variable(np.ones_like(self.data))
+            xp = mydezero.cuda.get_array_module(self.data)
+            self.grad = Variable(xp.ones_like(self.data))
 
         funcs = []
         seen_set = set()
@@ -246,18 +255,30 @@ class Variable:
         """Variable: Transpose with all axes reversed, following NumPy's T."""
         return mydezero.functions.transpose(self)
 
+    def to_cpu(self):
+        """Move the data to the CPU."""
+        if self.data is not None:
+            self.data = mydezero.cuda.as_numpy(self.data)
 
-def as_array(x):
+    def to_gpu(self):
+        """Move the data to the GPU."""
+        if self.data is not None:
+            self.data = mydezero.cuda.as_cupy(self.data)
+
+
+def as_array(x, array_module=np):
     """Convert a Python or NumPy scalar to a zero-dimensional array.
 
     Args:
         x (object): Value to normalize.
+        array_module (module): NumPy or CuPy module used to convert scalars,
+            matching the device of the other operand.
 
     Returns:
         np.ndarray or object: Array for a scalar; otherwise the original object.
     """
     if np.isscalar(x):
-        return np.array(x)
+        return array_module.array(x)
     return x
 
 
@@ -388,7 +409,7 @@ def add(x0, x1):
     Returns:
         Variable: Elementwise sum.
     """
-    x1 = as_array(x1)
+    x1 = as_array(x1, mydezero.cuda.get_array_module(x0.data))
     return Add()(x0, x1)
 
 
@@ -419,7 +440,7 @@ def mul(x0, x1):
     Returns:
         Variable: Elementwise product.
     """
-    x1 = as_array(x1)
+    x1 = as_array(x1, mydezero.cuda.get_array_module(x0.data))
     return Mul()(x0, x1)
 
 
@@ -471,7 +492,7 @@ def sub(x0, x1):
     Returns:
         Variable: Elementwise difference x0 - x1.
     """
-    x1 = as_array(x1)
+    x1 = as_array(x1, mydezero.cuda.get_array_module(x0.data))
     return Sub()(x0, x1)
 
 
@@ -485,7 +506,7 @@ def rsub(x0, x1):
     Returns:
         Variable: Elementwise difference x1 - x0.
     """
-    x1 = as_array(x1)
+    x1 = as_array(x1, mydezero.cuda.get_array_module(x0.data))
     return Sub()(x1, x0)
 
 
@@ -516,7 +537,7 @@ def div(x0, x1):
     Returns:
         Variable: Elementwise quotient x0 / x1.
     """
-    x1 = as_array(x1)
+    x1 = as_array(x1, mydezero.cuda.get_array_module(x0.data))
     return Div()(x0, x1)
 
 
@@ -530,7 +551,7 @@ def rdiv(x0, x1):
     Returns:
         Variable: Elementwise quotient x1 / x0.
     """
-    x1 = as_array(x1)
+    x1 = as_array(x1, mydezero.cuda.get_array_module(x0.data))
     return Div()(x1, x0)
 
 

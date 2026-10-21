@@ -6,8 +6,9 @@ From `projl/proj/`, install the library in the notebook kernel's Python environm
 python -m pip install -e .
 ```
 
-Examples use NumPy. Plots require Matplotlib; computation graphs require IPython
-and system Graphviz (`dot`). Select the matching Python 3 kernel and run cells in order.
+Examples use NumPy. GPU examples additionally require CuPy and a CUDA device.
+Plots require Matplotlib; computation graphs require IPython and system Graphviz
+(`dot`). Select the matching Python 3 kernel and run cells in order.
 
 Suggested reading order:
 
@@ -20,6 +21,7 @@ Suggested reading order:
 | `regression` | [nonlinear_regression.ipynb](regression/nonlinear_regression.ipynb) | Fitting nonlinear data with a two-layer network |
 | `neural_network` | [using_model_simple.ipynb](neural_network/using_model_simple.ipynb) | Defining a network with Model and Linear |
 | `neural_network` | [train_mnist_mlp.ipynb](neural_network/train_mnist_mlp.ipynb) | Training an MLP on MNIST |
+| `neural_network` | [train_mnist_with_gpu.ipynb](neural_network/train_mnist_with_gpu.ipynb) | Training an MLP on MNIST with GPU acceleration |
 
 Computation graphs are saved in the project's `draft/` directory.
 Notebooks retain their saved outputs; rerun them after code changes.

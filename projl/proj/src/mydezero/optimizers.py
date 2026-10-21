@@ -1,6 +1,7 @@
 """Optimizer base class and stochastic gradient descent updates."""
 
 import numpy as np
+from mydezero import cuda
 
 # =============================================================================
 # Optimizer (base class)
@@ -125,13 +126,17 @@ class MomentumSGD(Optimizer):
     def update_one(self, param):
         """Update a parameter and its stored velocity in place.
 
+        The velocity buffer is created on the same device (CPU/GPU) as the
+        parameter.
+
         Args:
             param (Parameter): Initialized floating-point NumPy parameter with
                 a Variable gradient.
         """
         v_key = id(param)
         if v_key not in self.vs:
-            self.vs[v_key] = np.zeros_like(param.data)
+            xp = cuda.get_array_module(param.data)
+            self.vs[v_key] = xp.zeros_like(param.data)
 
         v = self.vs[v_key]
         v *= self.momentum

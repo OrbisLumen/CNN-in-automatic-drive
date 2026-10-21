@@ -4,7 +4,7 @@ import weakref
 
 import numpy as np
 
-from mydezero import Parameter
+from mydezero import Parameter, cuda
 import mydezero.functions as F
 
 
@@ -85,6 +85,15 @@ class Layer:
         for param in self.params():
             param.cleargrad()
 
+    def to_cpu(self):
+        """Move all parameters to the CPU."""
+        for param in self.params():
+            param.to_cpu()
+
+    def to_gpu(self):
+        """Move all parameters to the GPU."""
+        for param in self.params():
+            param.to_gpu()
 
 class Linear(Layer):
     """Fully connected layer with optional bias and deferred weight initialization.
@@ -120,10 +129,15 @@ class Linear(Layer):
         else:
             self.b = Parameter(np.zeros(out_size, dtype=dtype), name="b")
 
-    def _init_W(self):
-        """Initialize weights with standard deviation sqrt(1 / in_size)."""
+    def _init_W(self, xp = np):
+        """Initialize weights with standard deviation sqrt(1 / in_size).
+
+        Args:
+            xp (module): NumPy or CuPy module used to sample the weights on
+                the device of the input.
+        """
         I, O = self.in_size, self.out_size
-        W_data = np.random.randn(I, O).astype(self.dtype) * np.sqrt(1 / I)
+        W_data = xp.random.randn(I, O).astype(self.dtype) * np.sqrt(1 / I)
         self.W.data = W_data
 
     def forward(self, x):
@@ -137,7 +151,8 @@ class Linear(Layer):
         """
         if self.W.data is None:
             self.in_size = x.shape[1]
-            self._init_W()
+            xp = cuda.get_array_module(x)
+            self._init_W(xp)
 
         y = F.linear(x, self.W, self.b)
         return y
