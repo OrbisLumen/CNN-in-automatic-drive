@@ -130,7 +130,7 @@ restores reduced axes as size one for broadcasting max/min gradients.
 
 ## Implementation Compared with DeZero
 
-The local reference is `../../reference/deep-learning-from-scratch-3-master-cn/dezero`.
+The reference implementation is `../../reference/deep-learning-from-scratch-3-master-cn/dezero`.
 MyDeZero currently implements a NumPy subset of that framework:
 
 | Module | Current implementation | Scope compared with DeZero |

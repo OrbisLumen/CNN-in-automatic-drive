@@ -1,11 +1,11 @@
-# Git 与 GitHub 协作规范
+# Git and GitHub Collaboration
 
-五人小组统一采用：**个人分支 → PR → 负责人审查 → 合并至 master**。
-本文约定团队流程；远程权限是否生效，以 GitHub 实际配置为准。
+The five-member team uses **personal branch → PR → maintainer review → merge into master**.
+This guide describes the workflow. GitHub settings determine actual permissions.
 
-## 分工与分支
+## Roles and Branches
 
-| 成员 | 个人分支 |
+| Member | Personal branch |
 | --- | --- |
 | OrbisLumen | `dev/orbislumen` |
 | Booyean | `dev/booyean` |
@@ -13,33 +13,34 @@
 | Qiulin087 | `dev/qiulin087` |
 | lucky-money-account | `dev/lucky-money-account` |
 
-- 只向自己的个人分支推送，代码与文档均通过 PR 进入 `master`。
-- OrbisLumen、Booyean 负责审查与合并，两人自己的 PR 由另一人审查；作者不能自批。
-- 个人分支长期使用，PR 采用 **Create a merge commit**，合并后同步主分支。
-- 分支名统一小写，不创建单独的 `dev` 分支；分支命名本身不限制权限。
-- 每项任务明确负责人、交付内容和验收方法；Word 等二进制文档同一时间由一人编辑。
+- Push to your own branch; submit code and documentation to `master` through PRs.
+- OrbisLumen and Booyean review and merge. Each reviews the other's PRs; authors cannot approve their own work.
+- Reuse personal branches. Choose **Create a merge commit**, then sync with the main branch.
+- Use lowercase branch names and no separate `dev` branch. Names alone do not enforce permissions.
+- Define an owner, deliverables, and acceptance checks for each task. Only one person edits a binary document, such as Word, at a time.
 
-## 日常操作
+## Daily Workflow
 
-以下以 OrbisLumen 为例，在仓库根目录执行，其他成员替换分支名。
+Run from the repository root. Replace OrbisLumen's branch with your own.
 
-首次加入并创建个人分支：
+First-time setup:
 
 ```bash
 git clone https://github.com/OrbisLumen/CNN-in-automatic-drive.git
 cd CNN-in-automatic-drive
-git config user.name "你的名字"
-git config user.email "你的邮箱"
+git config user.name "Your Name"
+git config user.email "you@example.com"
 git fetch origin
 git switch --no-track -c dev/orbislumen origin/master
 git push -u origin dev/orbislumen
 ```
 
-本地已有分支时使用 `git switch dev/orbislumen`；仅远程已有时使用
-`git switch --track origin/dev/orbislumen`。若要保留当前提交作为起点，改用
-`git switch -c dev/orbislumen`，而非从 `origin/master` 创建。
+For an existing local branch, use `git switch dev/orbislumen`.
+For a remote-only branch, use `git switch --track origin/dev/orbislumen`.
+To start from the current commit, use `git switch -c dev/orbislumen` instead.
 
-开始任务及 PR 合并后同步主分支。切换、合并前先保存工作，确认工作区干净：
+Sync before starting a task and after a PR merges. Save your work and ensure a clean
+working tree before switching or merging:
 
 ```bash
 git status
@@ -49,7 +50,8 @@ git merge origin/master
 git push
 ```
 
-修改前阅读对应 `request/` 和 `AGENTS.md`，完成后运行相关验证，再提交指定文件：
+Read the relevant `request/` and `AGENTS.md` before editing. Run relevant checks,
+then commit selected files:
 
 ```bash
 python -m pytest projl/proj/tests
@@ -57,17 +59,19 @@ git diff
 git add README.md
 git diff --cached
 git diff --cached --check
-git commit -m "docs(readme): 精简项目说明"
+git commit -m "docs(readme): simplify project overview"
 git push
 ```
 
-示例中的测试和文件应按任务替换。暂存后再次修改需重新 `git add`；未提交内容不会随推送上传。
-每次提交围绕一项完整改动，标题使用 `类型(范围): 具体内容`，如 `feat`、`fix`、`test`、
-`docs`、`refactor`、`chore`，避免“update”“最终版”。不提交个人环境、数据、权重或无关改动。
+Adapt tests and files to the task. Run `git add` again after further edits;
+uncommitted changes are not pushed. Each commit should cover one complete change.
+Use `type(scope): description`, with types such as `feat`, `fix`, `test`, `docs`,
+`refactor`, or `chore`. Avoid vague titles such as "update" or "final version".
+Do not commit personal environments, data, weights, or unrelated changes.
 
-## PR 与合并
+## PRs and Merging
 
-创建前检查个人分支的全部差异，避免带入其他任务：
+Check the full branch diff before creating a PR:
 
 ```bash
 git fetch origin
@@ -75,56 +79,67 @@ git log --oneline origin/master..HEAD
 git diff --stat origin/master...HEAD
 ```
 
-在 GitHub 创建 PR：`base: master`，`compare: 个人分支`。
-一个 PR 处理一项任务，说明目的、主要改动、验证命令与结果；未测试应说明原因，
-跨平台改动注明已验证的系统与 Python 版本。
+On GitHub, choose `base: master` and `compare: your personal branch`.
+Follow these rules:
 
-负责人检查实现、测试、范围和可维护性；`Comment` 不等于批准，`Request changes` 需处理，
-`Approve` 才表示通过。使用 `Start a review` 后还需 `Submit review` 发布。
-作者在原分支修改并推送即可更新 PR；新增改动后需重新批准。
+- Keep one task per PR and exclude unrelated changes, environments, data, weights, and temporary outputs.
+- Write titles in English as `type(scope): description`, using `feat`, `fix`, `test`, `docs`, `refactor`, or `chore`. Example: `feat(data): add MNIST loader`.
+- Use the [PR template](../.github/pull_request_template.md) and write concise English descriptions of the purpose and main changes.
+- Record relevant test commands and results. If tests were not run, explain why. For cross-platform changes, list tested operating systems and Python versions.
+- Update documentation when APIs, usage, or configuration change. List updated files, or explain why no update is needed.
 
-负责人批准、讨论解决、相关验证及已配置的自动检查通过后，由 OrbisLumen 或 Booyean 合并。
-前一任务未合并时，不往同一 PR 加入无关任务。
+Maintainers review correctness, tests, scope, and maintainability.
+`Comment` is not approval; address `Request changes`; `Approve` grants approval.
+After `Start a review`, select `Submit review` to publish it.
+Push fixes to the same branch to update the PR. New changes require fresh approval.
 
-## 主分支权限：目标与历史记录
+OrbisLumen or Booyean merges after approval, resolved discussions, relevant
+verification, and configured automated checks pass. Use **Create a merge commit**.
 
-目标：全员可推个人分支，仅两位负责人能通过已批准的 PR 更新 `master`，负责人也不能直接推送。
-批准人和合并人的限制需分别配置，CODEOWNERS 本身不能限制谁合并。
+## Main Branch Permissions: Target and History
 
-默认分支的 `.github/CODEOWNERS` 应包含：
+Target: everyone can push personal branches; only the two maintainers can update
+`master` through approved PRs. Maintainers cannot push directly either.
+Review and merge restrictions need separate configuration; CODEOWNERS alone does
+not restrict who can merge.
+
+The default branch's `.github/CODEOWNERS` should contain:
 
 ```text
 * @OrbisLumen @Booyean
 ```
 
-两位负责人需有写权限。目标为 `master` 的规则拆成两条，避免维护者同时绕过审查：
+Both maintainers need write access. Use two rulesets targeting `master`:
 
-| 规则 | 配置 | 例外 |
+| Rule | Settings | Bypass |
 | --- | --- | --- |
-| `Master review` | 必须 PR、1 次 Code Owner 批准、新提交取消旧批准、解决讨论、禁止强推和删除 | 无 |
-| `Master maintainers` | 仅 `Restrict updates` | 两位具体负责人，`For pull requests only` |
+| `Master review` | Require PR, one Code Owner approval, dismiss stale approvals, resolve discussions, block force pushes and deletion | None |
+| `Master maintainers` | `Restrict updates` only | The two named maintainers, `For pull requests only` |
 
-不要把整个 Write 角色加入例外；审查规则中的管理员 `Always allow` 应移除。
-若界面无法选择具体用户，需核对官方 API 支持情况，或在组织仓库使用负责人团队。
-仓库所有者仍可修改规则。
+Do not bypass the entire Write role. Remove administrator `Always allow` from the
+review rule. If individual users cannot be selected, check official API support
+or use a maintainer team in an organization repository. Owners can still change rules.
 
-**2026-10-06 历史核查，非实时状态：** PR、1 次批准、Code Owner 批准、解决讨论、
-新提交取消旧批准、禁止强推及删除已启用；CODEOWNERS 经
-[PR #3](https://github.com/OrbisLumen/CNN-in-automatic-drive/pull/3) 提交，当时待合并。
-CODEOWNERS 须进入目标分支才生效。管理员 `Always allow` 仍存在，
-仅负责人更新主分支的限制尚未配置和验证。修改本文不会改变远程规则。
+**Historical check on 2026-10-06, not live status:** PRs, one approval, Code Owner
+approval, resolved discussions, stale approval dismissal, and force-push/deletion
+blocks were enabled. CODEOWNERS was submitted in
+[PR #3](https://github.com/OrbisLumen/CNN-in-automatic-drive/pull/3), then pending merge.
+CODEOWNERS takes effect only after entering the target branch. Administrator
+`Always allow` remained; maintainer-only updates were not configured or verified.
+Editing this guide does not change remote rules.
 
-配置后验证：普通成员可推个人分支但不能合并；负责人可合并已批准 PR，
-不能合并未批准 PR，也不能直接推主分支。
+After configuration, verify that members can push personal branches but cannot
+merge; maintainers can merge approved PRs but cannot merge unapproved PRs or push
+directly to the main branch.
 
-## 常见问题
+## Common Issues
 
-- 推送被主分支规则拒绝：改向个人分支推送并提 PR，不强推绕过。
-- `non-fast-forward`：获取并检查远程同名分支，合并、验证后再推送。
-- 合并冲突：用 `git status` 定位，理解双方改动、移除冲突标记，验证后提交。
-- 个人分支推送后主分支没变化：需等 PR 合并。
+- Main-branch push rejected: push to your personal branch and open a PR.
+- `non-fast-forward`: fetch and inspect the remote branch, merge, verify, then push.
+- Merge conflicts: use `git status`, reconcile both changes, remove conflict markers, verify, and commit.
+- Main branch unchanged after a personal push: wait for the PR to merge.
 
-参考：[PR 审查](https://docs.github.com/en/pull-requests/get-started/reviewing-pull-requests-quickstart)、
-[CODEOWNERS](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners)、
-[Rulesets](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/creating-rulesets-for-a-repository)、
-[Rulesets API](https://docs.github.com/en/rest/repos/rules#create-a-repository-ruleset)。
+References: [PR reviews](https://docs.github.com/en/pull-requests/get-started/reviewing-pull-requests-quickstart),
+[CODEOWNERS](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners),
+[Rulesets](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/creating-rulesets-for-a-repository),
+[Rulesets API](https://docs.github.com/en/rest/repos/rules#create-a-repository-ruleset).

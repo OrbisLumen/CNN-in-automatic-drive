@@ -1,8 +1,12 @@
-# 数据集、变换与批次训练
+# Datasets, Transforms, and Mini-Batches
 
-## Dataset 与 MNIST
+## Dataset and MNIST
 
-`Dataset(train=True, transform=None, target_transform=None)` 在初始化时调用子类 `prepare()`，由子类设置 `self.data` 和可选的 `self.label`。`len(dataset)` 返回样本数；`dataset[index]` 接受标量索引，按需应用两类变换并返回 `(sample, label)`。无标签时返回 `(sample, None)`；None 变换等价于不变换。
+`Dataset(train=True, transform=None, target_transform=None)` calls the subclass's
+`prepare()` during initialization. Set `self.data` and optional `self.label` there.
+`len(dataset)` returns the sample count. `dataset[index]` accepts a scalar index,
+applies transforms, and returns `(sample, label)`, or `(sample, None)` without labels.
+A None transform leaves its input unchanged.
 
 ```python
 import numpy as np
@@ -17,16 +21,22 @@ loader = DataLoader(TinyDataset(), batch_size=4, shuffle=False)
 assert [len(t) for x, t in loader] == [4, 2]
 ```
 
-`mydezero.datasets.MNIST(train=True)` 选择 60,000 张训练图片；`train=False` 选择 10,000 张测试图片。首次使用下载 Google 托管的 MNIST GZIP 文件至 `~/.mydezero`，再次使用复用缓存。HTTPS 需要 Python 的 CA 证书配置正常。
+`mydezero.datasets.MNIST(train=True)` selects 60,000 training images;
+`train=False` selects 10,000 test images. The first use downloads Google-hosted
+MNIST GZIP files to `~/.mydezero`; later calls reuse the cache.
+HTTPS requires valid Python CA certificates.
 
-初始化时解压整个 split 至内存：
+Initialization decompresses the full split into memory:
 
-| 内容 | 原始存储 | `dataset[index]` 默认返回 |
+| Item | Raw storage | Default `dataset[index]` output |
 | --- | --- | --- |
-| 图像 | `uint8`，形状 `(N, 1, 28, 28)` | `float32`，形状 `(784,)`，范围 `[0, 1]` |
-| 标签 | `uint8`，形状 `(N,)` | 0–9 的类别索引 |
+| Images | `uint8`, shape `(N, 1, 28, 28)` | `float32`, shape `(784,)`, range `[0, 1]` |
+| Labels | `uint8`, shape `(N,)` | Class index from 0 to 9 |
 
-训练和测试原始像素约占 44.9 MiB 与 7.5 MiB。解压时有临时内存开销。原始数组来自不可变 bytes 的 NumPy 视图，通常只读；默认变换在取样时创建浮点数据，不会把整个存储提前转为 float32。修改原始数据前需要自行复制。
+Raw training and test pixels use about 44.9 MiB and 7.5 MiB, plus temporary
+memory during decompression. Raw arrays are NumPy views of immutable bytes and
+are normally read-only. Default transforms create floating-point samples on access;
+they do not convert the full storage to float32. Copy raw data before modifying it.
 
 ```python
 from mydezero.datasets import MNIST
@@ -34,43 +44,51 @@ from mydezero.datasets import MNIST
 train = MNIST(train=True)
 x, label = train[0]
 assert x.shape == (784,)
-train.show(row=2, col=5)  # 随机抽取十次，允许重复，显示原始灰度图
+train.show(row=2, col=5)  # Ten random raw grayscale images; repeats are allowed.
 assert MNIST.labels()[3] == '3'
 
 raw = MNIST(train=False, transform=None)
 assert raw[0][0].shape == (1, 28, 28)
 ```
 
-`show` 不使用样本 transform，不显示标签；`labels()` 返回整数类别到字符名称的映射。
+`show()` bypasses sample transforms and omits labels.
+`labels()` maps integer classes to character names.
 
-## 样本变换
+## Sample Transforms
 
-从 `mydezero.transforms` 导入：
+Import from `mydezero.transforms`:
 
-| 变换 | 用法 |
+| Transform | Usage |
 | --- | --- |
-| `Compose(transforms=[])` | 按列表顺序执行；空组合原样返回输入 |
-| `Flatten()` | 展平为一维数组 |
-| `AsType(dtype=np.float32)` | 转换 NumPy dtype |
-| `ToFloat(dtype=np.float32)` | AsType 的别名 |
-| `ToInt(dtype=int)` | 默认转为平台整数，也可指定整数 dtype |
-| `Normalize(mean=0, std=1)` | `(array - mean) / std`；std 应非零，序列参数沿第一个轴按通道广播 |
+| `Compose(transforms=[])` | Runs transforms in order; an empty list returns the input unchanged |
+| `Flatten()` | Flattens to a 1D array |
+| `AsType(dtype=np.float32)` | Converts NumPy dtype |
+| `ToFloat(dtype=np.float32)` | Alias for AsType |
+| `ToInt(dtype=int)` | Converts to platform integers by default; accepts another integer dtype |
+| `Normalize(mean=0, std=1)` | `(array - mean) / std`; std must be nonzero. Sequence arguments broadcast by channel along the first axis |
 
-对于图像，先转浮点再归一化，避免整数运算造成截断或溢出。按通道归一化使用 `(C, H, W)`，应在 Flatten 之前执行。
+Convert images to floating point before normalization to avoid integer truncation
+or overflow. Channel normalization expects `(C, H, W)` and should precede Flatten.
 
 ```python
 from mydezero.transforms import Compose, Flatten, Normalize, ToFloat
 
 transform = Compose([ToFloat(), Normalize([0.5], [0.5]), Flatten()])
-# 上述均值和标准差假定输入已处于 [0, 1]；MNIST 原始像素是 [0, 255]。
+# These statistics assume [0, 1] input; raw MNIST pixels are in [0, 255].
 mnist_transform = Compose([Flatten(), ToFloat(), Normalize(0, 255)])
 ```
 
-## DataLoader 与评估
+## DataLoader and Evaluation
 
-`DataLoader(dataset, batch_size, shuffle=True)` 每次返回 `(x, t)` 两个 NumPy 数组，包括最后不足 batch_size 的批次。batch_size 必须为正整数。`shuffle=False` 保留顺序；默认开始及每次耗尽后重新生成随机排列。
+`DataLoader(dataset, batch_size, shuffle=True)` returns `(x, t)` NumPy arrays,
+including a partial final batch. Use a positive integer batch_size.
+`shuffle=False` preserves order; otherwise a random permutation is generated
+at initialization and after exhaustion.
 
-迭代器耗尽时自动 `reset()`，因此可直接跨 epoch 复用。中途 break 不会重置，下次从未读批次继续；要重新开始需手动 `loader.reset()`。`loader.next()` 等价于 `next(loader)`。空数据集不产生批次。无标签数据会返回含 None 的 object 标签数组，不能直接用于监督损失。
+Exhaustion calls `reset()`, so the loader can be reused across epochs.
+Breaking early leaves the iterator at its current position; call `loader.reset()`
+to restart. `loader.next()` equals `next(loader)`. Empty datasets yield no batches.
+Unlabeled data returns object label arrays containing None, unsuitable for supervised loss.
 
 ```python
 import mydezero
@@ -96,10 +114,18 @@ with mydezero.no_grad():
 print(correct / total)
 ```
 
-汇总损失或正确率时按各批实际大小加权，并除以当前评估数据集的样本总数。测试集不能使用训练集数量作分母。完整 MNIST 示例见 [train_mnist_mlp.ipynb](../examples/neural_network/train_mnist_mlp.ipynb)。
+Weight loss and accuracy by actual batch size, then divide by the evaluation
+sample count. Do not use the training count for test metrics.
+See the [MNIST example](../examples/neural_network/train_mnist_mlp.ipynb).
 
-## 下载缓存约定
+## Download Cache
 
-`get_file` 展开 cache_dir 中的 `~` 并转为绝对路径，支持嵌套目录和指定文件名。默认从 URL 路径提取文件名，排除 query 和 fragment。调用方应提供带有效文件名的 URL，或显式指定 file_name。
+`get_file` expands `~` in cache_dir and returns an absolute path. It supports nested
+directories and custom file names. The default name comes from the URL path,
+excluding query and fragment. Provide a valid URL filename or explicit file_name.
 
-缓存存在时不会重新请求，也不会校验来源、大小或内容。同名文件共用缓存路径；需区分时传入不同 file_name 或 cache_dir。下载失败或 Ctrl+C 会清理当前未完成文件并抛出原异常；不提供断点续传。`show_progress` 显示百分比或未知总大小时的字节数，最后不足一块时最多显示 100%。
+Existing files are reused without checking source, size, or contents. Identical
+names share a cache path; use distinct file_name or cache_dir values when needed.
+Failure or Ctrl+C removes the partial file and re-raises the original exception.
+Downloads cannot resume. `show_progress` displays a percentage, or bytes if the
+total is unknown, capped at 100% for a partial final block.
