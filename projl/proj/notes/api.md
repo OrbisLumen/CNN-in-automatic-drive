@@ -1,27 +1,31 @@
-# MyDeZero API 与功能索引
+# MyDeZero API and Feature Index
 
-本项目实现 NumPy 上的自动微分与全连接网络训练。以下列出当前公开功能；`Function` 子类负责运算实现，通常使用对应的小写函数调用。完整示例见 [usage.md](usage.md)、[数据流水线](data.md) 和 [examples](../examples/README.md)。
+MyDeZero provides NumPy automatic differentiation and fully connected network training.
+`Function` subclasses implement operations; normally call their lowercase wrappers.
+See [usage](usage.md), [data](data.md), and [examples](../examples/README.md).
 
-## 核心与自动微分
+## Core and Automatic Differentiation
 
-从 `mydezero` 导入核心对象：
+Import core objects from `mydezero`:
 
-| API | 用法与约定 |
+| API | Usage and conventions |
 | --- | --- |
-| `Variable(data, name=None)` | 包装 NumPy 数组；支持 `None` 表示尚未初始化。Python 标量先用 `np.array` 包装 |
-| `Parameter(data, name=None)` | 可被 Layer 自动登记的 Variable |
-| `data`, `grad`, `creator`, `generation` | 原始数据、梯度、创建该变量的函数和图深度；梯度本身是 Variable |
-| `shape`, `ndim`, `size`, `dtype`, `len(x)` | 查询底层数组属性 |
-| `backward(retain_grad=False, create_graph=False)` | 默认以全一梯度反向传播；重复反向会累积叶子梯度。保留中间梯度或建立梯度计算图需显式开启 |
-| `cleargrad()` | 清除本变量梯度；模型所有参数使用 `model.cleargrads()` |
-| `reshape(*shape)`, `transpose(*axes)`, `.T`, `sum(axis=None, keepdims=False)` | 支持梯度的形状变换与求和 |
-| `+`, `-`, `*`, `/`, 一元 `-`, `**` | 支持 NumPy 广播和左右侧标量运算；幂的指数为常数 |
-| `using_config(name, value)` | 临时切换 Config 属性；嵌套和异常退出时恢复原值 |
-| `no_grad()` | 暂停记录计算图，适合推理和评估；不改变参数值 |
-| `Config.enable_backprop` | 控制是否记录计算图，通常使用上下文管理器而非直接修改 |
-| `Function` | 自定义运算：实现 `forward` 和 `backward`，通过实例调用连接计算图 |
+| `Variable(data, name=None)` | Wraps a NumPy array; `None` means uninitialized. Wrap Python scalars with `np.array` first |
+| `Parameter(data, name=None)` | A Variable that Layer can register automatically |
+| `data`, `grad`, `creator`, `generation` | Raw data, gradient, creating function, and graph depth; gradients are Variables |
+| `shape`, `ndim`, `size`, `dtype`, `len(x)` | Underlying array properties |
+| `backward(retain_grad=False, create_graph=False)` | Starts with an all-ones gradient by default; repeated calls accumulate leaf gradients. Enable flags to retain intermediate gradients or build a gradient graph |
+| `cleargrad()` | Clears this variable's gradient; use `model.cleargrads()` for model parameters |
+| `reshape(*shape)`, `transpose(*axes)`, `.T`, `sum(axis=None, keepdims=False)` | Differentiable shape operations and summation |
+| `+`, `-`, `*`, `/`, unary `-`, `**` | NumPy broadcasting and scalars on either side; exponents are constants |
+| `using_config(name, value)` | Temporarily sets a Config attribute; restores it after nesting or exceptions |
+| `no_grad()` | Disables graph recording for inference or evaluation; leaves parameter values unchanged |
+| `Config.enable_backprop` | Controls graph recording; prefer context managers over direct changes |
+| `Function` | Implement `forward` and `backward`; calling an instance connects the graph |
 
-`mydezero.core.as_array` 将标量转换成数组，`as_variable` 包装数组并保留已有 Variable 的身份。`setup_variable()` 在包导入时注册运算符，通常不需手动调用。
+`mydezero.core.as_array` converts scalars to arrays. `as_variable` wraps arrays and
+preserves existing Variable identity. Package import calls `setup_variable()` to
+register operators; manual calls are usually unnecessary.
 
 ```python
 import numpy as np
@@ -39,65 +43,70 @@ with no_grad():
 assert prediction.creator is None
 ```
 
-## 运算函数
+## Functions
 
-以下函数从 `mydezero.functions`（通常缩写为 `F`）调用，输入接受 Variable 或 NumPy 数组，返回 Variable。
+Import from `mydezero.functions`, usually as `F`. Inputs accept Variables or NumPy
+arrays; outputs are Variables.
 
-| API | 行为与限制 |
+| API | Behavior and limits |
 | --- | --- |
-| `square(x)`, `exp(x)`, `sin(x)`, `cos(x)`, `tanh(x)` | 逐元素函数，支持高阶求导 |
-| `sphere(x, y)`, `matyas(x, y)`, `goldstein(x, y)` | 二元优化示例函数 |
-| `reshape(x, shape)`, `transpose(x, axes=None)` | 形状变换，反向还原输入轴和形状 |
-| `get_item(x, slices)` | NumPy 索引；重复索引累加梯度。当前没有 `x[slices]` 语法 |
-| `sum(x, axis=None, keepdims=False)` | 沿指定轴求和 |
-| `sum_to(x, shape)` | 将广播扩张的维度求和到目标形状 |
-| `broadcast_to(x, shape)` | 广播到目标形状，反向将梯度求和回原形状 |
-| `matmul(x, W)` | 二维矩阵乘法 |
-| `linear(x, W, b=None)` | 二维批次仿射变换 `x @ W + b`；不拥有参数 |
-| `mean_squared_error(x0, x1)` | 同形状的非空批次；平方差总和除以批次大小 N，不除以元素总数 |
-| `softmax_cross_entropy(x, t)` | `(N, C)` logits 与 `(N,)` 或 `(N, 1)` 整数标签；返回批次平均损失。标签不求导 |
-| `accuracy(y, t)` | 分类正确率，输入形状同交叉熵；无梯度图，argmax 并列时取第一个类别 |
-| `relu(x)` | 逐元素取 max(x, 0)，负数和零点梯度为 0，正数梯度为 1 |
-| `sigmoid(x)` | 基于 tanh 的稳定 Sigmoid 实现 |
-| `sigmoid_simple(x)` | 用基础运算组合的教学实现；极端负输入可能指数溢出 |
-| `softmax(x, axis=1)` | 沿 axis 归一化；一维输入传 `axis=0` |
-| `max(x, axis=None, keepdims=False)`, `min(...)` | 每个并列极值都获得完整上游梯度 |
-| `clip(x, x_min, x_max)` | 区间内及边界梯度为 1，区间外为 0 |
+| `square(x)`, `exp(x)`, `sin(x)`, `cos(x)`, `tanh(x)` | Elementwise functions with higher-order derivatives |
+| `sphere(x, y)`, `matyas(x, y)`, `goldstein(x, y)` | Two-input optimization examples |
+| `reshape(x, shape)`, `transpose(x, axes=None)` | Shape operations; backward restores input shape and axes |
+| `get_item(x, slices)` | NumPy indexing; repeated indices accumulate gradients. No `x[slices]` syntax yet |
+| `sum(x, axis=None, keepdims=False)` | Sums over the specified axes |
+| `sum_to(x, shape)` | Sums broadcast dimensions to the target shape |
+| `broadcast_to(x, shape)` | Broadcasts to a shape; backward sums gradients to the original shape |
+| `matmul(x, W)` | 2D matrix multiplication |
+| `linear(x, W, b=None)` | 2D batch affine transform `x @ W + b`; owns no parameters |
+| `mean_squared_error(x0, x1)` | Nonempty batches with matching shapes; divides total squared error by batch size N, not element count |
+| `softmax_cross_entropy(x, t)` | `(N, C)` logits and `(N,)` or `(N, 1)` integer labels; mean batch loss. Labels have no gradient |
+| `accuracy(y, t)` | Same input shapes as cross entropy; no gradient graph. Argmax ties select the first class |
+| `relu(x)` | Elementwise max(x, 0); gradient is 0 for negative values and zero, 1 for positive values |
+| `sigmoid(x)` | Stable tanh-based sigmoid |
+| `sigmoid_simple(x)` | Teaching implementation using basic operations; extreme negative inputs may overflow |
+| `softmax(x, axis=1)` | Normalizes along axis; use `axis=0` for 1D input |
+| `max(x, axis=None, keepdims=False)`, `min(...)` | Each tied extremum receives the full upstream gradient |
+| `clip(x, x_min, x_max)` | Gradient is 1 inside the interval and at its boundaries, 0 outside |
 
-分类训练直接将 logits 传入交叉熵，不要先做 Softmax。标签为类别索引而非 one-hot。更多数值和梯度约定见 [usage.md](usage.md)。
+Pass logits directly to cross entropy, without applying softmax first.
+Labels are class indices, not one-hot vectors. See [usage.md](usage.md) for details.
 
-## 层、模型与优化器
+## Layers, Models, and Optimizers
 
-| API | 行为 |
+| API | Behavior |
 | --- | --- |
-| `Layer` | 子类实现 `forward`。将 Parameter 或子层直接赋给属性以注册；普通容器内对象不会自动注册 |
-| `params()`, `cleargrads()` | 递归遍历参数与清除梯度；遍历顺序不固定 |
-| `layers.Linear(out_size, nobias=False, dtype=np.float32, in_size=None)` | 持有 W 和可选 b；省略 in_size 时首次前向推断输入宽度 |
-| `Model` | 继承 Layer，增加计算图绘制功能 |
-| `Model.plot(*inputs, to_file='model.png')` | 前向计算并绘图；文件相对项目 `draft/` 目录 |
-| `models.Sequential(*layers)` | 按顺序调用；不自动插入激活函数，空序列直接返回输入 |
-| `models.MLP(fc_output_sizes, activation=F.sigmoid)` | 非空宽度序列，最后一项是输出宽度；只在隐藏层后激活 |
-| `optimizers.Optimizer` | 子类实现 `update_one(param)`；`setup(model)` 绑定目标并返回自身 |
-| `add_hook(callback)` | 按登记顺序在更新前调用，接收有梯度的参数列表 |
-| `update()` | 更新有梯度的参数，不自动清除梯度 |
+| `Layer` | Implement `forward`. Assign Parameters and child layers directly to attributes for registration; ordinary containers are not scanned |
+| `params()`, `cleargrads()` | Recursively collect parameters and clear gradients; traversal order is unspecified |
+| `layers.Linear(out_size, nobias=False, dtype=np.float32, in_size=None)` | Owns W and optional b; infers input width on the first call if in_size is omitted |
+| `Model` | Extends Layer with graph plotting |
+| `Model.plot(*inputs, to_file='model.png')` | Runs forward and plots; paths are relative to the project's `draft/` |
+| `models.Sequential(*layers)` | Calls layers in order without adding activations; an empty sequence returns its input |
+| `models.MLP(fc_output_sizes, activation=F.sigmoid)` | Nonempty width sequence ending with output width; activates hidden layers only |
+| `optimizers.Optimizer` | Implement `update_one(param)`; `setup(model)` binds the model and returns the optimizer |
+| `add_hook(callback)` | Runs before updates in registration order; receives parameters with gradients |
+| `update()` | Updates parameters with gradients; does not clear gradients |
 | `optimizers.SGD(lr=0.01)` | `param -= lr * grad` |
-| `optimizers.MomentumSGD(lr=0.01, momentum=0.9)` | 持久维护逐参数速度；`v = momentum*v - lr*grad`，`param += v` |
+| `optimizers.MomentumSGD(lr=0.01, momentum=0.9)` | Stores per-parameter velocity; `v = momentum*v - lr*grad`, `param += v` |
 
-训练参数使用浮点数组。MomentumSGD 必须跨批次复用才能保留动量。当前不包含卷积、GPU、Dropout、权重保存或预训练网络。
+Use floating-point parameter arrays. Reuse MomentumSGD across batches to retain
+momentum. Convolution, GPU, Dropout, weight saving, and pretrained networks are not implemented.
 
-## 数据和工具
+## Data and Utilities
 
-Dataset、MNIST、DataLoader 与所有 transforms 的参数、形状和示例见 [data.md](data.md)。
+See [data.md](data.md) for Dataset, MNIST, DataLoader, and transforms.
 
-| `mydezero.utils` API | 行为 |
+| `mydezero.utils` API | Behavior |
 | --- | --- |
-| `get_file(url, file_name=None, cache_dir=None)` | 本地下载缓存；默认 `~/.mydezero`，返回绝对路径；失败或中断时删除残留并重新抛异常 |
-| `show_progress(block_num, block_size, total_size)` | urlretrieve 回调；总大小未知或为零时显示已下载字节数 |
-| `get_dot_graph(output, verbose=True)` | 返回 DOT 文本；verbose 包含形状与 dtype |
-| `plot_dot_graph(output, verbose=True, to_file='graph.png')` | 使用系统 Graphviz 渲染；返回可供 notebook 显示的 Image，IPython 不可用时返回 None |
-| `sum_to(x, shape)` | NumPy 版本的形状归约，不创建自动微分图 |
-| `reshape_sum_backward(gy, x_shape, axis, keepdims)` | 为 sum 的反向广播恢复被移除的轴 |
-| `logsumexp(x, axis=1)` | 保留归约维度的稳定 NumPy log-sum-exp，不修改输入 |
-| `max_backward_shape(x, axis)` | 计算 max/min 反向广播所需形状 |
+| `get_file(url, file_name=None, cache_dir=None)` | Download cache, default `~/.mydezero`; returns an absolute path. Removes partial files and re-raises on failure or interruption |
+| `show_progress(block_num, block_size, total_size)` | urlretrieve callback; shows downloaded bytes if total size is unknown or zero |
+| `get_dot_graph(output, verbose=True)` | Returns DOT text; verbose includes shape and dtype |
+| `plot_dot_graph(output, verbose=True, to_file='graph.png')` | Renders with system Graphviz; returns an Image for notebooks, or None without IPython |
+| `sum_to(x, shape)` | NumPy shape reduction without an autograd graph |
+| `reshape_sum_backward(gy, x_shape, axis, keepdims)` | Restores removed axes for sum backward broadcasting |
+| `logsumexp(x, axis=1)` | Stable NumPy log-sum-exp; retains reduced dimensions and preserves input |
+| `max_backward_shape(x, axis)` | Shape for max/min backward broadcasting |
 
-渲染的图片和共享 `temp.dot` 写入项目 `draft/`，重复绘图会覆盖同名文件。`graph.py` 目前为空，没有独立 API。测试运行方式及功能对应关系见 [testing.md](testing.md)。
+Rendered images and shared `temp.dot` go to the project's `draft/`; repeated plots
+can overwrite files. `graph.py` is empty and has no separate API.
+See [testing.md](testing.md) for test commands and coverage.
