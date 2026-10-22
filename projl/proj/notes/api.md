@@ -80,6 +80,7 @@ Labels are class indices, not one-hot vectors. See [usage.md](usage.md) for deta
 | `Layer` | Implement `forward`. Assign Parameters and child layers directly to attributes for registration; ordinary containers are not scanned |
 | `params()`, `cleargrads()` | Recursively collect parameters and clear gradients; traversal order is unspecified |
 | `Layer.to_cpu()`, `Layer.to_gpu()` | Move all parameters between CPU and GPU; CuPy is required for GPU |
+| `Layer.save_weights(path)`, `Layer.load_weights(path)` | Save/load all parameters to/from a compressed .npz archive; saving first moves parameters to the CPU |
 | `layers.Linear(out_size, nobias=False, dtype=np.float32, in_size=None)` | Owns W and optional b; infers input width on the first call if in_size is omitted |
 | `Model` | Extends Layer with graph plotting |
 | `Model.plot(*inputs, to_file='model.png')` | Runs forward and plots; paths are relative to the project's `draft/` |
@@ -93,8 +94,8 @@ Labels are class indices, not one-hot vectors. See [usage.md](usage.md) for deta
 
 Use floating-point parameter arrays. Reuse MomentumSGD across batches to retain
 momentum. With CuPy installed, variables, layers, optimizers, and DataLoader
-batches move to the GPU via `to_gpu()`/`to_cpu()`. Convolution, Dropout, weight
-saving, and pretrained networks are not implemented.
+batches move to the GPU via `to_gpu()`/`to_cpu()`. Convolution, Dropout, and
+pretrained networks are not implemented.
 
 ## Data and Utilities
 

@@ -25,7 +25,7 @@ including parameterized cases.
 | Matrix operations and regression loss | `functions/test_tensor.py`, `test_layers.py` | matmul, linear with/without bias, input/weight/bias gradients, MSE batch normalization |
 | Classification | `functions/test_classification.py` | Softmax axes, cross entropy numerical gradients, second derivatives, large logits, underflow, single class, accuracy, column labels, no-gradient behavior |
 | Extrema and clipping | `functions/test_extrema.py` | Positive/negative axes, retained dimensions, ties, boundaries, higher-order gradients |
-| Layers and models | `test_layers.py`, `test_models.py` | Deferred initialization, optional bias, recursive parameters, Sequential, MLP, hidden activations, plot calls |
+| Layers and models | `test_layers.py`, `test_models.py` | Deferred initialization, optional bias, recursive parameters, Sequential, MLP, hidden activations, plot calls, weight save/load roundtrip |
 | Optimizers | `test_optimizers.py` | SGD, MomentumSGD, hooks, independent velocities, missing gradients, zero momentum |
 | Dataset and MNIST | `test_datasets.py` | prepare, unlabeled data, transforms, train/test files, IDX headers, shapes/dtypes, raw storage, sample preview |
 | DataLoader | `test_dataloaders.py` | Order, shuffle, partial batches, repeated epochs, reset, next, empty/unlabeled data |
