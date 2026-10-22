@@ -1,9 +1,9 @@
 """Trainable layers and recursive parameter collection."""
 
+import os
 import weakref
 
 import numpy as np
-
 from mydezero import Parameter, cuda
 import mydezero.functions as F
 
@@ -94,6 +94,71 @@ class Layer:
         """Move all parameters to the GPU."""
         for param in self.params():
             param.to_gpu()
+
+    def _flatten_params(self, params_dict, parent_key=""):
+        """Collect parameters of this layer and its child layers into a dict.
+
+        Nested layers contribute entries under names joined with ``'/'``,
+        producing keys such as ``'l0/W'`` that stay unique across the model
+        and match the keys written by `save_weights`.
+
+        Args:
+            params_dict (dict): Dictionary updated in place with parameter
+                name keys and Parameter values.
+            parent_key (str): Name prefix for nested layers; empty for the
+                top-level layer.
+        """
+        for name in self._params:
+            obj = self.__dict__[name]
+            key = parent_key + '/' + name if parent_key else name
+
+            if isinstance(obj, Layer):
+                obj._flatten_params(params_dict, key)
+            else:
+                params_dict[key] = obj
+
+    def save_weights(self, path):
+        """Save all parameters as a compressed .npz archive.
+
+        Parameter names are flattened with ``'/'`` separators (see
+        `_flatten_params`) so nested layers are preserved. The layer is
+        moved to the CPU before saving. If saving fails, a partially
+        written file is removed and the error is re-raised.
+
+        Args:
+            path (str): File path to save to. Use the ``.npz`` extension so
+                the same path can be passed to `load_weights`.
+        """
+        self.to_cpu()
+
+        params_dict = {}
+        self._flatten_params(params_dict)
+        array_dict = {key: param.data for key, param in params_dict.items()
+                      if param is not None}
+        try:
+            np.savez_compressed(path, **array_dict)
+        except (Exception, KeyboardInterrupt) as e:
+            if os.path.exists(path):
+                os.remove(path)
+            raise
+
+    def load_weights(self, path):
+        """Load parameters saved by `save_weights` into this layer.
+
+        Each parameter's data is replaced with the value stored under the
+        matching flattened name, so the layer structure must match the
+        saved archive. Loaded data is on the CPU; call `to_gpu()`
+        afterwards when training on the GPU.
+
+        Args:
+            path (str): File path to a .npz archive written by
+                `save_weights`.
+        """
+        npz = np.load(path)
+        params_dict = {}
+        self._flatten_params(params_dict)
+        for key, param in params_dict.items():
+            param.data = npz[key]
 
 class Linear(Layer):
     """Fully connected layer with optional bias and deferred weight initialization.
