@@ -20,6 +20,7 @@ including parameterized cases.
 | Automatic differentiation | `core/test_backward.py` | Branches, variable reuse, gradient accumulation, intermediate gradients, custom multi-output functions, finite differences |
 | Configuration contexts | `core/test_config.py` | Graph disabling, nesting, restoration after exceptions |
 | Elementary functions and activations | `functions/test_elementary.py` | square/exp/sin/cos/tanh, both sigmoids, ReLU at zero, higher-order derivatives, stability |
+| Dropout | `core/test_config.py`, `functions/test_elementary.py` | test_mode identity and flag restoration, mask ratio, rescaling, zero ratio, shape and dtype preservation |
 | Optimization examples | `functions/test_optimization.py` | sphere/matyas/goldstein gradients |
 | Tensor operations | `functions/test_tensor.py` | reshape, explicit transpose, sum, sum_to, broadcast_to, indexing, repeated indices, higher-order indexing gradients |
 | Matrix operations and regression loss | `functions/test_tensor.py`, `test_layers.py` | matmul, linear with/without bias, input/weight/bias gradients, MSE batch normalization |

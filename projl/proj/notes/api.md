@@ -21,6 +21,7 @@ Import core objects from `mydezero`:
 | `+`, `-`, `*`, `/`, unary `-`, `**` | NumPy broadcasting and scalars on either side; exponents are constants |
 | `using_config(name, value)` | Temporarily sets a Config attribute; restores it after nesting or exceptions |
 | `no_grad()` | Disables graph recording for inference or evaluation; leaves parameter values unchanged |
+| `test_mode()` | Disables training-only behavior such as dropout masking for inference or evaluation |
 | `Config.enable_backprop` | Controls graph recording; prefer context managers over direct changes |
 | `Function` | Implement `forward` and `backward`; calling an instance connects the graph |
 
@@ -69,6 +70,7 @@ NumPy/CuPy arrays; outputs are Variables.
 | `softmax(x, axis=1)` | Normalizes along axis; use `axis=0` for 1D input |
 | `max(x, axis=None, keepdims=False)`, `min(...)` | Each tied extremum receives the full upstream gradient |
 | `clip(x, x_min, x_max)` | Gradient is 1 inside the interval and at its boundaries, 0 outside |
+| `dropout(x, dropout_ratio=0.5)` | Randomly masks elements and rescales the rest during training; identity in `test_mode` |
 
 Pass logits directly to cross entropy, without applying softmax first.
 Labels are class indices, not one-hot vectors. See [usage.md](usage.md) for details.
@@ -94,8 +96,8 @@ Labels are class indices, not one-hot vectors. See [usage.md](usage.md) for deta
 
 Use floating-point parameter arrays. Reuse MomentumSGD across batches to retain
 momentum. With CuPy installed, variables, layers, optimizers, and DataLoader
-batches move to the GPU via `to_gpu()`/`to_cpu()`. Convolution, Dropout, and
-pretrained networks are not implemented.
+batches move to the GPU via `to_gpu()`/`to_cpu()`. Convolution and pretrained
+networks are not implemented.
 
 ## Data and Utilities
 
