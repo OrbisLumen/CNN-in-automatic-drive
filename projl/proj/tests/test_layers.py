@@ -1,10 +1,11 @@
-"""Linear layer initialization, forward output, and gradients."""
+"""Linear layer initialization, forward output, gradients, and weight saving."""
 
 import numpy as np
 import pytest
 
 from mydezero import Variable
 from mydezero.layers import Linear
+from mydezero.models import MLP
 
 
 @pytest.mark.parametrize('nobias', [False, True])
@@ -30,3 +31,32 @@ def test_linear_lazy_initialization_and_gradients(nobias):
     assert layer.W.data.dtype == np.float64
     layer(x)
     np.testing.assert_array_equal(layer.W.data, weights)
+
+
+@pytest.mark.parametrize('nobias', [False, True])
+def test_save_load_weights_linear_roundtrip(nobias, tmp_path):
+    layer = Linear(2, nobias=nobias, dtype=np.float64, in_size=3)
+    path = str(tmp_path / 'linear.npz')
+    layer.save_weights(path)
+
+    restored = Linear(2, nobias=nobias, dtype=np.float64, in_size=3)
+    restored.load_weights(path)
+
+    np.testing.assert_array_equal(restored.W.data, layer.W.data)
+    if not nobias:
+        np.testing.assert_array_equal(restored.b.data, layer.b.data)
+    else:
+        assert restored.b is None
+
+
+def test_save_load_weights_mlp_restores_predictions(tmp_path):
+    model = MLP((4, 3))
+    x = Variable(np.array([[1.0, 2.0], [3.0, 4.0]]))
+    expected = model(x).data.copy()
+
+    path = str(tmp_path / 'mlp.npz')
+    model.save_weights(path)
+
+    restored = MLP((4, 3))
+    restored.load_weights(path)
+    np.testing.assert_array_equal(restored(x).data, expected)
