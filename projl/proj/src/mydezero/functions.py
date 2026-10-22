@@ -629,6 +629,32 @@ def accuracy(y, t):
     acc = result.mean()
     return Variable(as_array(acc))
 
+def dropout(x, dropout_ratio=0.5):
+    """Randomly disable elements to prevent overfitting.
+
+    In training mode, each element is dropped with probability
+    ``dropout_ratio`` and the remaining values are scaled by
+    ``1 / (1 - dropout_ratio)`` so the expected sum stays unchanged. In
+    `test_mode`, the input is returned unchanged.
+
+    Args:
+        x (Variable or np.ndarray): Input values of any shape.
+        dropout_ratio (float): Drop probability in [0, 1) per element.
+
+    Returns:
+        Variable: Masked and scaled input, or the unchanged input in
+            `test_mode`.
+    """
+    x = as_variable(x)
+
+    if mydezero.Config.train:
+        xp = cuda.get_array_module(x)
+        mask = xp.random.rand(*x.shape) > dropout_ratio
+        scale = xp.array(1.0 - dropout_ratio).astype(x.dtype)
+        y = x * mask / scale
+        return y
+    else:
+        return x
 
 # =============================================================================
 # activation function: sigmoid, softmax, ReLU
