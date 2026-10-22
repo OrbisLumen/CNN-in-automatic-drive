@@ -1,4 +1,4 @@
-"""Backpropagation configuration and context restoration."""
+"""Backpropagation configuration, test mode, and context restoration."""
 
 import numpy as np
 
@@ -41,3 +41,23 @@ def test_nested_context_and_exception_restore_configuration():
     except RuntimeError:
         pass
     assert Config.enable_backprop == original
+
+
+def test_test_mode_passes_dropout_input_through_unchanged():
+    from mydezero import test_mode
+    from mydezero.functions import dropout
+
+    x = Variable(np.array([[1.0, 2.0], [3.0, 4.0]]))
+
+    with test_mode():
+        y = dropout(x, 0.9)
+
+    np.testing.assert_array_equal(y.data, x.data)
+
+
+def test_test_mode_restores_train_flag():
+    from mydezero import Config, test_mode
+
+    with test_mode():
+        assert Config.train is False
+    assert Config.train is True
