@@ -71,9 +71,15 @@ NumPy/CuPy arrays; outputs are Variables.
 | `max(x, axis=None, keepdims=False)`, `min(...)` | Each tied extremum receives the full upstream gradient |
 | `clip(x, x_min, x_max)` | Gradient is 1 inside the interval and at its boundaries, 0 outside |
 | `dropout(x, dropout_ratio=0.5)` | Randomly masks elements and rescales the rest during training; identity in `test_mode` |
+| `conv2d(x, W, b=None, stride=1, pad=0)` | 2D convolution; input `(N, C, H, W)`, filters `(OC, C, KH, KW)` |
+| `deconv2d(x, W, b=None, stride=1, pad=0, outsize=None)` | 2D transposed convolution; filters `(C, OC, KH, KW)` |
+| `pooling(x, kernel_size, stride=1, pad=0)` | Spatial max pooling; backward routes each gradient to the window maximum |
+| `average_pooling(x, kernel_size, stride=1, pad=0)` | Spatial average pooling; backward splits each gradient evenly across the window |
 
 Pass logits directly to cross entropy, without applying softmax first.
 Labels are class indices, not one-hot vectors. See [usage.md](usage.md) for details.
+Convolution functions live in `mydezero.functions_conv` and are also re-exported
+through `mydezero.functions`.
 
 ## Layers, Models, and Optimizers
 
@@ -84,6 +90,8 @@ Labels are class indices, not one-hot vectors. See [usage.md](usage.md) for deta
 | `Layer.to_cpu()`, `Layer.to_gpu()` | Move all parameters between CPU and GPU; CuPy is required for GPU |
 | `Layer.save_weights(path)`, `Layer.load_weights(path)` | Save/load all parameters to/from a compressed .npz archive; saving first moves parameters to the CPU |
 | `layers.Linear(out_size, nobias=False, dtype=np.float32, in_size=None)` | Owns W and optional b; infers input width on the first call if in_size is omitted |
+| `layers.Conv2d(out_channels, kernel_size, stride=1, pad=0, nobias=False, dtype=np.float32, in_channels=None)` | Owns filters `(OC, C, KH, KW)` and optional b; infers input channels on the first call |
+| `layers.Deconv2d(out_channels, kernel_size, stride=1, pad=0, nobias=False, dtype=np.float32, in_channels=None)` | Transposed convolution layer; owns filters `(C, OC, KH, KW)` |
 | `Model` | Extends Layer with graph plotting |
 | `Model.plot(*inputs, to_file='model.png')` | Runs forward and plots; paths are relative to the project's `draft/` |
 | `models.Sequential(*layers)` | Calls layers in order without adding activations; an empty sequence returns its input |
@@ -96,8 +104,8 @@ Labels are class indices, not one-hot vectors. See [usage.md](usage.md) for deta
 
 Use floating-point parameter arrays. Reuse MomentumSGD across batches to retain
 momentum. With CuPy installed, variables, layers, optimizers, and DataLoader
-batches move to the GPU via `to_gpu()`/`to_cpu()`. Convolution and pretrained
-networks are not implemented.
+batches move to the GPU via `to_gpu()`/`to_cpu()`. Pretrained networks are
+not implemented.
 
 ## Data and Utilities
 
