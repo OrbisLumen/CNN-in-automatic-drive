@@ -8,7 +8,7 @@ python -m pytest tests -q
 
 Use the notebook's Python environment. Tests require NumPy, Matplotlib, and pytest.
 The rendering test requires system Graphviz and skips without `dot`.
-IPython supports notebook image display. The full suite contains **199 tests**,
+IPython supports notebook image display. The full suite contains **252 tests**,
 including parameterized cases.
 
 ## Feature Coverage
@@ -21,7 +21,8 @@ including parameterized cases.
 | Configuration contexts | `core/test_config.py` | Graph disabling, nesting, restoration after exceptions |
 | Elementary functions and activations | `functions/test_elementary.py` | square/exp/sin/cos/tanh, both sigmoids, ReLU at zero, higher-order derivatives, stability |
 | Dropout | `core/test_config.py`, `functions/test_elementary.py` | test_mode identity and flag restoration, mask ratio, rescaling, zero ratio, shape and dtype preservation |
-| Convolution and pooling | `functions/test_conv.py`, `test_layers.py` | conv2d/deconv2d shape and numerical gradients, max-pooling argmax routing, average pooling, Conv2d/Deconv2d lazy init and shapes |
+| Convolution and pooling | `functions/test_conv.py`, `test_layers.py` | conv2d/deconv2d input/weight/bias numerical gradients, convolution weight second derivatives, max-pooling argmax routing, rectangular average pooling, Conv2d/Deconv2d lazy init and shapes |
+| Patch extraction and accumulation | `functions/test_im2col.py` | im2col/col2im values and layout, matrix and 6D output, batches/channels, rectangular kernels, stride/padding, uncovered pixels, noncontiguous input, dtype and input preservation, overlap sums, numerical gradients and second derivatives |
 | Optimization examples | `functions/test_optimization.py` | sphere/matyas/goldstein gradients |
 | Tensor operations | `functions/test_tensor.py` | reshape, explicit transpose, sum, sum_to, broadcast_to, indexing, repeated indices, higher-order indexing gradients |
 | Matrix operations and regression loss | `functions/test_tensor.py`, `test_layers.py` | matmul, linear with/without bias, input/weight/bias gradients, MSE batch normalization |
@@ -53,7 +54,9 @@ run is outside the default suite. Automated training tests use small determinist
 data to check parameter updates and accuracy. Preview tests check image pixels and
 shape while replacing Matplotlib display calls. Graph rendering separately verifies
 a real PNG file. GPU paths require CuPy and a CUDA device; they are not covered
-by the automated suite.
+by the automated suite. The im2col/col2im and convolution fixes have only been
+verified on NumPy. CuPy/CUDA behavior remains unverified, with Windows GPU
+validation pending.
 
 Run Python snippets in each document from top to bottom. MNIST examples in
 `data.md` download and load real data; `show()` displays images. When adding APIs,
