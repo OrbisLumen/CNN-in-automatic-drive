@@ -284,3 +284,55 @@ def get_file(url, file_name=None, cache_dir=None):
     print(" Done")
 
     return file_path
+
+# =============================================================================
+# others
+# =============================================================================
+
+def get_conv_outsize(input_size, kernel_size, stride, pad):
+    """Return the spatial output size of a convolution.
+
+    Args:
+        input_size (int): Input spatial size along one axis.
+        kernel_size (int): Kernel size along that axis.
+        stride (int): Stride of the filter.
+        pad (int): Spatial padding width.
+
+    Returns:
+        int: Output spatial size.
+    """
+    return (input_size + pad * 2 - kernel_size) // stride + 1
+
+def get_deconv_outsize(size, k, s, p):
+    """Return the spatial output size of a transposed convolution.
+
+    Args:
+        size (int): Input spatial size along one axis.
+        k (int): Kernel size along that axis.
+        s (int): Stride of the filter.
+        p (int): Spatial padding width.
+
+    Returns:
+        int: Output spatial size.
+    """
+    return s * (size - 1) + k - 2 * p
+
+def pair(x):
+    """Normalize a size into a (height, width) tuple.
+
+    Args:
+        x (int or (int, int)): A single size applied to both axes, or a pair.
+
+    Returns:
+        tuple[int, int]: The (height, width) pair.
+
+    Raises:
+        ValueError: If x is neither an int nor a length-two tuple.
+    """
+    if isinstance(x, int):
+        return (x, x)
+    elif isinstance(x, tuple):
+        assert len(x) == 2
+        return x
+    else:
+        raise ValueError

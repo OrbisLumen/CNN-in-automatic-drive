@@ -877,3 +877,10 @@ def clip(x, x_min, x_max):
             and returns zero for values outside the interval.
     """
     return Clip(x_min, x_max)(x)
+
+from mydezero.functions_conv import conv2d
+from mydezero.functions_conv import deconv2d
+from mydezero.functions_conv import im2col
+from mydezero.functions_conv import col2im
+from mydezero.functions_conv import pooling
+from mydezero.functions_conv import average_pooling

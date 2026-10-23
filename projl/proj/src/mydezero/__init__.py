@@ -21,7 +21,7 @@ import mydezero.datasets
 import mydezero.dataloaders
 import mydezero.optimizers
 import mydezero.functions
-# import mydezero.functions_conv
+import mydezero.functions_conv
 import mydezero.layers
 import mydezero.utils
 import mydezero.cuda
