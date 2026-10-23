@@ -1,6 +1,7 @@
 """Convolution, transposed convolution, and pooling correctness."""
 
 import numpy as np
+import pytest
 
 from mydezero import Variable, no_grad
 import mydezero.functions as F
@@ -80,3 +81,53 @@ def test_deconv2d_backward_matches_numerical_gradient():
     objective(x).backward()
 
     np.testing.assert_allclose(x.grad.data, numerical_gradient(objective, x_data), atol=1e-6)
+
+
+@pytest.mark.parametrize("operation", [F.conv2d, F.deconv2d])
+def test_convolution_input_weight_and_bias_gradients(operation):
+    rng = np.random.default_rng(0)
+    x = Variable(rng.normal(size=(1, 2, 3, 4)))
+    weight_shape = (3, 2, 2, 3) if operation is F.conv2d else (2, 3, 2, 3)
+    weight = Variable(rng.normal(size=weight_shape))
+    bias = Variable(rng.normal(size=3))
+    output_weights = rng.normal(size=operation(x, weight, bias, (2, 1), (1, 1)).shape)
+
+    def objective(values, parameter):
+        args = [x, weight, bias]
+        args[parameter] = values
+        return (operation(*args, stride=(2, 1), pad=(1, 1)) * output_weights).sum()
+
+    objective(x, 0).backward()
+
+    for index, variable in enumerate((x, weight, bias)):
+        expected = numerical_gradient(lambda values: objective(values, index), variable.data)
+        np.testing.assert_allclose(variable.grad.data, expected, atol=1e-8)
+
+
+def test_average_pooling_rectangular_kernel_backward():
+    data = np.arange(1, 13, dtype=np.float64).reshape(1, 1, 3, 4)
+    x = Variable(data.copy())
+    weights = np.array([[[[1.0, -2.0], [3.0, 4.0]]]])
+
+    def objective(values):
+        return (F.average_pooling(values, (2, 3)) * weights).sum()
+
+    np.testing.assert_array_equal(
+        F.average_pooling(x, (2, 3)).data, [[[[4.0, 5.0], [8.0, 9.0]]]]
+    )
+    objective(x).backward()
+
+    np.testing.assert_allclose(x.grad.data, numerical_gradient(objective, data), atol=1e-8)
+
+
+def test_conv2d_weight_gradient_supports_second_derivatives():
+    x = Variable(np.arange(1, 10, dtype=np.float64).reshape(1, 1, 3, 3))
+    weight = Variable(np.ones((1, 1, 2, 2)))
+
+    F.conv2d(x, weight).sum().backward(create_graph=True)
+
+    weight_gradient = weight.grad
+    np.testing.assert_array_equal(weight_gradient.data, [[[[12, 16], [24, 28]]]])
+    x.cleargrad()
+    weight_gradient.sum().backward()
+    np.testing.assert_array_equal(x.grad.data, [[[[1, 2, 1], [2, 4, 2], [1, 2, 1]]]])
