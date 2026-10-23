@@ -1,0 +1,10 @@
+# Python 3.12; run from the repository root after cloning the pinned tools source.
+numpy==1.26.4
+matplotlib==3.9.4
+pillow==11.1.0
+gymnasium==1.0.0
+pytest==8.3.5
+jupyter==1.1.1
+ipykernel==6.29.5
+-e ./projl/proj
+-e ./tools/gym-donkeycar

@@ -27,19 +27,18 @@ source .venv/bin/activate
 
 ```powershell
 # Windows PowerShell
-py -m venv .venv
+python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
 
-使用环境中的 Python 安装基础依赖和 MyDeZero：
+先按[环境说明](doc/donkeycar-setup.md)下载 tools 中的固定版本源码与模拟器，再使用环境中的 Python 安装依赖和两个本地项目：
 
 ```bash
-python -m pip install numpy jupyter matplotlib pytest
-python -m pip install -e ./projl/proj
+python -m pip install -r requirements.txt
 python -m pytest projl/proj/tests
 ```
 
-小组需统一 Python 与依赖版本，当前跨平台兼容性仍待验证。
+环境基线为 Python 3.12，直接依赖版本见 `requirements.txt`；macOS 兼容性需单独验证。
 DonkeyCar 下载、安装及 Windows 无需激活环境的用法见 [环境说明](doc/donkeycar-setup.md)。
 MyDeZero 详情见 [项目 README](projl/proj/README.md)。
 
