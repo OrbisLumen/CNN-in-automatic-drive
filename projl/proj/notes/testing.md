@@ -53,10 +53,15 @@ The full MNIST notebook needs network access or cached data. Its five-epoch trai
 run is outside the default suite. Automated training tests use small deterministic
 data to check parameter updates and accuracy. Preview tests check image pixels and
 shape while replacing Matplotlib display calls. Graph rendering separately verifies
-a real PNG file. GPU paths require CuPy and a CUDA device; they are not covered
-by the automated suite. The im2col/col2im and convolution fixes have only been
-verified on NumPy. CuPy/CUDA behavior remains unverified, with Windows GPU
-validation pending.
+a real PNG file. Optional GPU tests require CuPy and a CUDA device; see
+[GPU setup](../../../doc/cupy-setup.md) for installation and execution.
+`integration/test_gpu.py` checks CPU/GPU transfers, broadcast gradients,
+convolution and transposed-convolution outputs and input/weight/bias gradients,
+max/average pooling gradients, and classifier training with MomentumSGD.
+Convolution checks include asymmetric stride and padding and exercise the
+GPU im2col/col2im kernels. Missing CuPy/devices skip these tests; kernel or
+library failures on an available GPU fail. This coverage does not certify
+every GPU operation, dtype, or hardware configuration.
 
 Run Python snippets in each document from top to bottom. MNIST examples in
 `data.md` download and load real data; `show()` displays images. When adding APIs,

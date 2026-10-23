@@ -34,6 +34,7 @@ def test_download_local_file_creates_nested_cache_and_reuses_it(tmp_path, monkey
 
 def test_default_cache_and_url_query_filename(tmp_path, monkeypatch):
     monkeypatch.setenv('HOME', str(tmp_path))
+    monkeypatch.setenv('USERPROFILE', str(tmp_path))
 
     def retrieve(url, path, callback):
         Path(path).write_bytes(b'content')
@@ -47,6 +48,7 @@ def test_default_cache_and_url_query_filename(tmp_path, monkeypatch):
 
 def test_explicit_filename_and_expanded_cache(tmp_path, monkeypatch):
     monkeypatch.setenv('HOME', str(tmp_path))
+    monkeypatch.setenv('USERPROFILE', str(tmp_path))
     source = tmp_path / 'source'
     source.write_bytes(b'payload')
     result = utils.get_file(source.as_uri(), file_name='renamed.bin', cache_dir='~/cache')
