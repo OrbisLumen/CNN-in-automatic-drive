@@ -135,9 +135,8 @@ class Conv2DGradW(Function):
         gW = xp.tensordot(gy, col, ((0, 2, 3), (0, 4, 5)))
         return gW
 
-    def backward(self, gys):
+    def backward(self, gW):
         x, gy = self.inputs
-        gW, = self.outputs
 
         xh, xw = x.shape[2:]
         gx = deconv2d(gy, gW, stride=self.stride, pad=self.pad,
@@ -259,7 +258,7 @@ class AveragePooling(Function):
     def backward(self, gy):
         # TODO(Koki): This is simple implementation
         N, C, OH, OW = gy.shape
-        KW, KH = pair(self.kernel_size)
+        KH, KW = pair(self.kernel_size)
         gy /= (KW*KH)
         gcol = broadcast_to(gy.reshape(-1), (KH, KW, N*C*OH*OW))
         gcol = gcol.reshape(KH, KW, N, C, OH, OW).transpose(2, 3, 0, 1, 4, 5)
@@ -355,7 +354,7 @@ class Col2im(Function):
 
 
 def col2im(x, input_shape, kernel_size, stride=1, pad=0, to_matrix=True):
-    """Restore the original image from `im2col` output.
+    """Scatter patches into an image, summing overlapping contributions.
 
     Args:
         x (Variable or np.ndarray): Column representation from `im2col`.
@@ -366,7 +365,8 @@ def col2im(x, input_shape, kernel_size, stride=1, pad=0, to_matrix=True):
         to_matrix (bool): Whether x uses the 2D matrix representation.
 
     Returns:
-        Variable: Restored image of shape input_shape.
+        Variable: Accumulated image of shape input_shape. Overlapping patches
+            are summed, so this is not generally the inverse of `im2col`.
     """
     return Col2im(input_shape, kernel_size, stride, pad, to_matrix)(x)
 
