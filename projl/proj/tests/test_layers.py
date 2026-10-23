@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from mydezero import Variable
-from mydezero.layers import Linear
+from mydezero.layers import Linear, Conv2d, Deconv2d
 from mydezero.models import MLP
 
 
@@ -60,3 +60,24 @@ def test_save_load_weights_mlp_restores_predictions(tmp_path):
     restored = MLP((4, 3))
     restored.load_weights(path)
     np.testing.assert_array_equal(restored(x).data, expected)
+
+
+def test_conv2d_layer_lazy_initialization_and_shapes():
+    layer = Conv2d(4, kernel_size=3, pad=1, dtype=np.float32)
+    assert layer.W.data is None
+
+    x = Variable(np.random.rand(2, 3, 8, 8).astype(np.float32))
+    y = layer(x)
+
+    assert y.shape == (2, 4, 8, 8)
+    assert layer.W.shape == (4, 3, 3, 3)
+    assert layer.b.shape == (4,)
+
+
+def test_deconv2d_layer_forward_shape():
+    layer = Deconv2d(4, kernel_size=3, pad=1, dtype=np.float32, in_channels=3)
+    x = Variable(np.random.rand(2, 3, 5, 5).astype(np.float32))
+
+    y = layer(x)
+
+    assert y.shape == (2, 4, 5, 5)
