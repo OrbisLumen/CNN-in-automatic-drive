@@ -121,3 +121,25 @@ def test_relu_second_derivative_of_squared_output():
     x.cleargrad()
     first.sum().backward()
     np.testing.assert_array_equal(x.grad.data, [0, 0, 2])
+
+
+@pytest.mark.parametrize('dtype', [np.float32, np.float64])
+def test_dropout_mask_ratio_rescaling_and_dtype(dtype):
+    np.random.seed(0)
+    x = Variable(np.random.rand(100, 100).astype(dtype))
+
+    y = F.dropout(x, 0.5)
+
+    assert y.shape == x.shape and y.dtype == dtype
+    kept = y.data != 0
+    assert 0.45 < kept.mean() < 0.55
+    np.testing.assert_allclose(y.data[kept], x.data[kept] / 0.5)
+
+
+def test_dropout_with_zero_ratio_keeps_input():
+    np.random.seed(0)
+    x = Variable(np.random.rand(10, 10))
+
+    y = F.dropout(x, 0.0)
+
+    np.testing.assert_array_equal(y.data, x.data)

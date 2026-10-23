@@ -21,8 +21,10 @@ class Config:
 
     Attributes:
         enable_backprop (bool): Whether function calls record a computation graph.
+        train (bool): Whether dropout-like functions run in training mode.
     """
     enable_backprop = True
+    train = True
 
 
 @contextlib.contextmanager
@@ -56,6 +58,14 @@ def no_grad():
     """
     return using_config('enable_backprop', False)
 
+def test_mode():
+    """Create a context that switches dropout-like functions to inference.
+
+    Returns:
+        contextlib.AbstractContextManager: Context restoring the previous
+            setting on exit. Use it as ``with test_mode():`` during inference.
+    """
+    return using_config('train', False)
 
 # =============================================================================
 # Variable, Function

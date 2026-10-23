@@ -20,12 +20,13 @@ including parameterized cases.
 | Automatic differentiation | `core/test_backward.py` | Branches, variable reuse, gradient accumulation, intermediate gradients, custom multi-output functions, finite differences |
 | Configuration contexts | `core/test_config.py` | Graph disabling, nesting, restoration after exceptions |
 | Elementary functions and activations | `functions/test_elementary.py` | square/exp/sin/cos/tanh, both sigmoids, ReLU at zero, higher-order derivatives, stability |
+| Dropout | `core/test_config.py`, `functions/test_elementary.py` | test_mode identity and flag restoration, mask ratio, rescaling, zero ratio, shape and dtype preservation |
 | Optimization examples | `functions/test_optimization.py` | sphere/matyas/goldstein gradients |
 | Tensor operations | `functions/test_tensor.py` | reshape, explicit transpose, sum, sum_to, broadcast_to, indexing, repeated indices, higher-order indexing gradients |
 | Matrix operations and regression loss | `functions/test_tensor.py`, `test_layers.py` | matmul, linear with/without bias, input/weight/bias gradients, MSE batch normalization |
 | Classification | `functions/test_classification.py` | Softmax axes, cross entropy numerical gradients, second derivatives, large logits, underflow, single class, accuracy, column labels, no-gradient behavior |
 | Extrema and clipping | `functions/test_extrema.py` | Positive/negative axes, retained dimensions, ties, boundaries, higher-order gradients |
-| Layers and models | `test_layers.py`, `test_models.py` | Deferred initialization, optional bias, recursive parameters, Sequential, MLP, hidden activations, plot calls |
+| Layers and models | `test_layers.py`, `test_models.py` | Deferred initialization, optional bias, recursive parameters, Sequential, MLP, hidden activations, plot calls, weight save/load roundtrip |
 | Optimizers | `test_optimizers.py` | SGD, MomentumSGD, hooks, independent velocities, missing gradients, zero momentum |
 | Dataset and MNIST | `test_datasets.py` | prepare, unlabeled data, transforms, train/test files, IDX headers, shapes/dtypes, raw storage, sample preview |
 | DataLoader | `test_dataloaders.py` | Order, shuffle, partial batches, repeated epochs, reset, next, empty/unlabeled data |

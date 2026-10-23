@@ -22,6 +22,7 @@ Suggested reading order:
 | `neural_network` | [using_model_simple.ipynb](neural_network/using_model_simple.ipynb) | Defining a network with Model and Linear |
 | `neural_network` | [train_mnist_mlp.ipynb](neural_network/train_mnist_mlp.ipynb) | Training an MLP on MNIST |
 | `neural_network` | [train_mnist_with_gpu.ipynb](neural_network/train_mnist_with_gpu.ipynb) | Training an MLP on MNIST with GPU acceleration |
+| `neural_network` | [weights_saved_loaded.ipynb](neural_network/weights_saved_loaded.ipynb) | Saving and loading trained weights |
 
 Computation graphs are saved in the project's `draft/` directory.
 Notebooks retain their saved outputs; rerun them after code changes.

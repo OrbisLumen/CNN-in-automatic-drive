@@ -21,6 +21,7 @@ Import core objects from `mydezero`:
 | `+`, `-`, `*`, `/`, unary `-`, `**` | NumPy broadcasting and scalars on either side; exponents are constants |
 | `using_config(name, value)` | Temporarily sets a Config attribute; restores it after nesting or exceptions |
 | `no_grad()` | Disables graph recording for inference or evaluation; leaves parameter values unchanged |
+| `test_mode()` | Disables training-only behavior such as dropout masking for inference or evaluation |
 | `Config.enable_backprop` | Controls graph recording; prefer context managers over direct changes |
 | `Function` | Implement `forward` and `backward`; calling an instance connects the graph |
 
@@ -69,6 +70,7 @@ NumPy/CuPy arrays; outputs are Variables.
 | `softmax(x, axis=1)` | Normalizes along axis; use `axis=0` for 1D input |
 | `max(x, axis=None, keepdims=False)`, `min(...)` | Each tied extremum receives the full upstream gradient |
 | `clip(x, x_min, x_max)` | Gradient is 1 inside the interval and at its boundaries, 0 outside |
+| `dropout(x, dropout_ratio=0.5)` | Randomly masks elements and rescales the rest during training; identity in `test_mode` |
 
 Pass logits directly to cross entropy, without applying softmax first.
 Labels are class indices, not one-hot vectors. See [usage.md](usage.md) for details.
@@ -80,6 +82,7 @@ Labels are class indices, not one-hot vectors. See [usage.md](usage.md) for deta
 | `Layer` | Implement `forward`. Assign Parameters and child layers directly to attributes for registration; ordinary containers are not scanned |
 | `params()`, `cleargrads()` | Recursively collect parameters and clear gradients; traversal order is unspecified |
 | `Layer.to_cpu()`, `Layer.to_gpu()` | Move all parameters between CPU and GPU; CuPy is required for GPU |
+| `Layer.save_weights(path)`, `Layer.load_weights(path)` | Save/load all parameters to/from a compressed .npz archive; saving first moves parameters to the CPU |
 | `layers.Linear(out_size, nobias=False, dtype=np.float32, in_size=None)` | Owns W and optional b; infers input width on the first call if in_size is omitted |
 | `Model` | Extends Layer with graph plotting |
 | `Model.plot(*inputs, to_file='model.png')` | Runs forward and plots; paths are relative to the project's `draft/` |
@@ -93,8 +96,8 @@ Labels are class indices, not one-hot vectors. See [usage.md](usage.md) for deta
 
 Use floating-point parameter arrays. Reuse MomentumSGD across batches to retain
 momentum. With CuPy installed, variables, layers, optimizers, and DataLoader
-batches move to the GPU via `to_gpu()`/`to_cpu()`. Convolution, Dropout, weight
-saving, and pretrained networks are not implemented.
+batches move to the GPU via `to_gpu()`/`to_cpu()`. Convolution and pretrained
+networks are not implemented.
 
 ## Data and Utilities
 
