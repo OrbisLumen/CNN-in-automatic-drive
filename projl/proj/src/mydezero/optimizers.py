@@ -1,7 +1,8 @@
-"""Optimizer base class and stochastic gradient descent updates."""
+"""Optimizer base class and parameter update rules."""
 
 import numpy as np
 from mydezero import cuda
+
 
 # =============================================================================
 # Optimizer (base class)
@@ -142,3 +143,74 @@ class MomentumSGD(Optimizer):
         v *= self.momentum
         v -= self.lr * param.grad.data
         param.data += v
+
+
+class Adam(Optimizer):
+    """Apply Adam with persistent moment estimates for each parameter.
+
+    The moments track the gradient and its square and start at zero. Each
+    update uses bias-corrected moments based on the parameter's update count.
+    Parameters without gradients retain their moments and update counts.
+
+    Args:
+        lr (float): Learning rate. Defaults to 0.001.
+        beta1 (float): First-moment decay factor. Defaults to 0.9.
+        beta2 (float): Second-moment decay factor. Defaults to 0.999.
+        epsilon (float): Constant added to the denominator for numerical
+            stability. Defaults to 1e-8.
+
+    Attributes:
+        lr (float): Learning rate used for each update.
+        beta1 (float): First-moment decay factor.
+        beta2 (float): Second-moment decay factor.
+        epsilon (float): Numerical stability constant.
+        ts (dict[int, int]): Update counts keyed by parameter identity.
+        ms (dict): First-moment arrays keyed by parameter identity.
+        vs (dict): Second-moment arrays keyed by parameter identity.
+    """
+
+    def __init__(self, lr=0.001, beta1=0.9, beta2=0.999, epsilon=1e-8):
+        super().__init__()
+        self.lr = lr
+        self.beta1 = beta1
+        self.beta2 = beta2
+        self.epsilon = epsilon
+
+        self.ts = {}
+        self.vs = {}
+        self.ms = {}
+
+    def update_one(self, param):
+        """Update a parameter and its stored moments in place.
+
+        The moment buffers match the parameter's shape, dtype, and device.
+
+        Args:
+            param (Parameter): Initialized floating-point parameter with a
+                Variable gradient.
+        """
+        key = id(param)
+
+        xp = cuda.get_array_module(param.data)
+
+        if key not in self.ms:
+            self.ms[key] = xp.zeros_like(param.data)
+
+        if key not in self.vs:
+            self.vs[key] = xp.zeros_like(param.data)
+
+        if key not in self.ts:
+            self.ts[key] = 0
+
+        self.ts[key] += 1
+        m = self.ms[key]
+        v = self.vs[key]
+        m *= self.beta1
+        m += (1 - self.beta1) * param.grad.data
+        v *= self.beta2
+        v += (1 - self.beta2) * param.grad.data ** 2
+
+        m_fix = m / (1 - self.beta1 ** self.ts[key])
+        v_fix = v / (1 - self.beta2 ** self.ts[key])
+
+        param.data -= self.lr * (m_fix / (xp.sqrt(v_fix) + self.epsilon))
