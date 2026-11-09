@@ -1,10 +1,10 @@
-"""SGD and momentum updates, gradient filtering, and optimizer hooks."""
+"""SGD, momentum, and Adam updates, gradient filtering, and optimizer hooks."""
 
 import numpy as np
 import pytest
 
 from mydezero import Parameter, Variable
-from mydezero.optimizers import MomentumSGD, SGD
+from mydezero.optimizers import Adam, MomentumSGD, SGD
 
 
 def test_sgd_updates_only_parameters_with_gradients_and_runs_hooks(regression_model):
@@ -89,3 +89,48 @@ def test_zero_momentum_matches_sgd_over_multiple_updates():
         sgd.update_one(plain)
         optimizer.update_one(momentum)
         np.testing.assert_allclose(momentum.data, plain.data)
+
+
+
+@pytest.mark.parametrize('dtype', [np.float32, np.float64])
+def test_adam_persists_moments_across_changing_gradients(dtype):
+    param = Parameter(np.array([1.0], dtype=dtype))
+    optimizer = Adam(lr=0.1, beta1=0.5, beta2=0.5)
+    key = id(param)
+
+    param.grad = Variable(np.array([2.0], dtype=dtype))
+    optimizer.update_one(param)
+    np.testing.assert_allclose(param.data, [0.9])
+    np.testing.assert_allclose(optimizer.ms[key], [1.0])
+    np.testing.assert_allclose(optimizer.vs[key], [2.0])
+    assert optimizer.ts[key] == 1
+
+    param.grad = Variable(np.array([-2.0], dtype=dtype))
+    optimizer.update_one(param)
+    # The corrected moments are -2/3 and 4 on the second step.
+    np.testing.assert_allclose(param.data, [0.9 + 0.1 / 3])
+    np.testing.assert_allclose(optimizer.ms[key], [-0.5])
+    np.testing.assert_allclose(optimizer.vs[key], [3.0])
+    assert optimizer.ts[key] == 2
+    assert optimizer.ms[key].dtype == optimizer.vs[key].dtype == dtype
+
+
+def test_adam_counts_only_updates_with_gradients(regression_model):
+    model = regression_model
+    optimizer = Adam(lr=0.1, beta1=0.5, beta2=0.5).setup(model)
+    weight, bias = model.linear.W, model.linear.b
+
+    weight.grad = Variable(np.array([[-2.0]]))
+    optimizer.update()
+    assert optimizer.ts == {id(weight): 1}
+
+    model.cleargrads()
+    bias.grad = Variable(np.array([-4.0]))
+    optimizer.update()
+
+    assert optimizer.ts == {id(weight): 1, id(bias): 1}
+    np.testing.assert_allclose(weight.data, [[0.1]])
+    np.testing.assert_allclose(bias.data, [0.1])
+    np.testing.assert_allclose(optimizer.ms[id(weight)], [[-1.0]])
+    np.testing.assert_allclose(optimizer.vs[id(weight)], [[2.0]])
+    np.testing.assert_allclose(model.unused.data, 7.0)
