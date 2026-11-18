@@ -1,27 +1,21 @@
 # Git and GitHub Collaboration
 
-The five-member team uses **personal branch → PR → maintainer review → merge into master**.
+The five-member team uses one branch and one PR per task. Create a branch from
+the latest `origin/master` when a task is ready to start.
 This guide describes the workflow. GitHub settings determine actual permissions.
 
 ## Roles and Branches
 
-| Member | Personal branch |
-| --- | --- |
-| OrbisLumen | `dev/orbislumen` |
-| Booyean | `dev/booyean` |
-| yangchunyu-1 | `dev/yangchunyu-1` |
-| Qiulin087 | `dev/qiulin087` |
-| lucky-money-account | `dev/lucky-money-account` |
-
-- Push to your own branch; submit code and documentation to `master` through PRs.
+- Push to the task branch and submit code and documentation to `master` through a PR.
 - OrbisLumen and Booyean review and merge. Each reviews the other's PRs; authors cannot approve their own work.
-- Reuse personal branches. Choose **Create a merge commit**, then sync with the main branch.
-- Use lowercase branch names and no separate `dev` branch. Names alone do not enforce permissions.
+- Use lowercase names that describe the task, such as `feat/donkeycar-autopilot`,
+  `fix/pooling-gradient`, or `docs/proj1-report`.
+- Retire legacy `dev/<username>` branches from daily use. Check for unmerged work before removing any legacy branch.
 - Define an owner, deliverables, and acceptance checks for each task. Only one person edits a binary document, such as Word, at a time.
 
 ## Daily Workflow
 
-Run from the repository root. Replace OrbisLumen's branch with your own.
+Run from the repository root after cloning.
 
 First-time setup:
 
@@ -30,24 +24,16 @@ git clone https://github.com/OrbisLumen/CNN-in-automatic-drive.git
 cd CNN-in-automatic-drive
 git config user.name "Your Name"
 git config user.email "you@example.com"
-git fetch origin
-git switch --no-track -c dev/orbislumen origin/master
-git push -u origin dev/orbislumen
 ```
 
-For an existing local branch, use `git switch dev/orbislumen`.
-For a remote-only branch, use `git switch --track origin/dev/orbislumen`.
-To start from the current commit, use `git switch -c dev/orbislumen` instead.
-
-Sync before starting a task and after a PR merges. Save your work and ensure a clean
-working tree before switching or merging:
+Before starting a new task, check that the working tree is clean, fetch
+`origin`, and create the task branch. Use `git switch <branch>` to resume an
+existing local task or `git switch --track origin/<branch>` to resume a remote task.
 
 ```bash
 git status
-git switch dev/orbislumen
 git fetch origin
-git merge origin/master
-git push
+git switch --no-track -c feat/donkeycar-autopilot origin/master
 ```
 
 Read the relevant `request/` and `AGENTS.md` before editing. Run relevant checks,
@@ -60,7 +46,7 @@ git add README.md
 git diff --cached
 git diff --cached --check
 git commit -m "docs(readme): simplify project overview"
-git push
+git push -u origin HEAD
 ```
 
 Adapt tests and files to the task. Run `git add` again after further edits;
@@ -79,7 +65,7 @@ git log --oneline origin/master..HEAD
 git diff --stat origin/master...HEAD
 ```
 
-On GitHub, choose `base: master` and `compare: your personal branch`.
+On GitHub, choose `base: master` and select the task branch as the compare branch.
 Follow these rules:
 
 - Keep one task per PR and exclude unrelated changes, environments, data, weights, and temporary outputs.
@@ -96,9 +82,18 @@ Push fixes to the same branch to update the PR. New changes require fresh approv
 OrbisLumen or Booyean merges after approval, resolved discussions, relevant
 verification, and configured automated checks pass. Use **Create a merge commit**.
 
+After the PR merges, sync local `master` and delete the completed local branch.
+Use **Delete branch** on the merged PR if the remote branch still exists.
+
+```bash
+git switch master
+git pull --ff-only origin master
+git branch -d feat/donkeycar-autopilot
+```
+
 ## Main Branch Permissions: Target and History
 
-Target: everyone can push personal branches; only the two maintainers can update
+Target: everyone can push task branches; only the two maintainers can update
 `master` through approved PRs. Maintainers cannot push directly either.
 Review and merge restrictions need separate configuration; CODEOWNERS alone does
 not restrict who can merge.
@@ -128,16 +123,16 @@ CODEOWNERS takes effect only after entering the target branch. Administrator
 `Always allow` remained; maintainer-only updates were not configured or verified.
 Editing this guide does not change remote rules.
 
-After configuration, verify that members can push personal branches but cannot
+After configuration, verify that members can push task branches but cannot
 merge; maintainers can merge approved PRs but cannot merge unapproved PRs or push
 directly to the main branch.
 
 ## Common Issues
 
-- Main-branch push rejected: push to your personal branch and open a PR.
+- Main-branch push rejected: push to the task branch and open a PR.
 - `non-fast-forward`: fetch and inspect the remote branch, merge, verify, then push.
 - Merge conflicts: use `git status`, reconcile both changes, remove conflict markers, verify, and commit.
-- Main branch unchanged after a personal push: wait for the PR to merge.
+- Main branch unchanged after pushing a task branch: wait for the PR to merge.
 
 References: [PR reviews](https://docs.github.com/en/pull-requests/get-started/reviewing-pull-requests-quickstart),
 [CODEOWNERS](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners),
