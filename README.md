@@ -44,6 +44,6 @@ MyDeZero 详情见 [项目 README](projl/proj/README.md)。
 
 ## 小组协作
 
-个人分支 `dev/<github用户名>` → PR → 负责人审查 → 合并至 `master`。
+有明确任务时，从最新的 `origin/master` 新建任务分支（如 `feat/donkeycar-autopilot`），一项任务对应一个 PR。审查通过并合并至 `master` 后，可清理任务分支。
 OrbisLumen、Booyean 负责审查与合并；具体操作及权限配置状态见 [协作规范](doc/collaboration.md)。
 个人环境、模拟器、数据和模型权重不提交 Git。

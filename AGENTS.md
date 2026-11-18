@@ -10,6 +10,7 @@
 6. When a change is requested, first analyze it and provide code suggestions before editing files.
 7. Keep changes and suggestions as simple as possible, and think twice before adding complexity.
 8. Keep changes narrowly scoped and avoid broad structural changes.
+9. Before editing for a new task, create a branch named for that task from the latest `origin/master`. Use one branch and one PR per task. Continue review fixes on the same branch.
 
 ## Testing Guidelines
 
