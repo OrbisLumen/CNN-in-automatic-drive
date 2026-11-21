@@ -7,7 +7,7 @@ This guide describes the workflow. GitHub settings determine actual permissions.
 ## Roles and Branches
 
 - Push to the task branch and submit code and documentation to `master` through a PR.
-- OrbisLumen and Booyean review and merge. Each reviews the other's PRs; authors cannot approve their own work.
+- All five team members can review PRs. For each PR, at least three distinct members other than the author must approve before merge.
 - Use lowercase names that describe the task, such as `feat/donkeycar-autopilot`,
   `fix/pooling-gradient`, or `docs/proj1-report`.
 - Retire legacy `dev/<username>` branches from daily use. Check for unmerged work before removing any legacy branch.
@@ -74,13 +74,14 @@ Follow these rules:
 - Record relevant test commands and results. If tests were not run, explain why. For cross-platform changes, list tested operating systems and Python versions.
 - Update documentation when APIs, usage, or configuration change. List updated files, or explain why no update is needed.
 
-Maintainers review correctness, tests, scope, and maintainability.
-`Comment` is not approval; address `Request changes`; `Approve` grants approval.
-After `Start a review`, select `Submit review` to publish it.
-Push fixes to the same branch to update the PR. New changes require fresh approval.
+Ask at least three teammates to review the changes for correctness, tests, scope
+and maintainability. Reviewers submit **Approve** to record their approval.
+Address change requests on the same branch. Pushing new reviewable changes
+dismisses stale approvals, so request review again.
 
-OrbisLumen or Booyean merges after approval, resolved discussions, relevant
-verification, and configured automated checks pass. Use **Create a merge commit**.
+Once the PR has three current approvals, including a code owner, resolve all
+review threads and complete the relevant checks. A member with write access can
+then select **Create a merge commit**.
 
 After the PR merges, sync local `master` and delete the completed local branch.
 Use **Delete branch** on the merged PR if the remote branch still exists.
@@ -91,41 +92,17 @@ git pull --ff-only origin master
 git branch -d feat/donkeycar-autopilot
 ```
 
-## Main Branch Permissions: Target and History
+## Main Branch Rules
 
-Target: everyone can push task branches; only the two maintainers can update
-`master` through approved PRs. Maintainers cannot push directly either.
-Review and merge restrictions need separate configuration; CODEOWNERS alone does
-not restrict who can merge.
+The active [Collaboration ruleset](https://github.com/OrbisLumen/CNN-in-automatic-drive/rules/24490741)
+covers `master`. It requires a PR, three approvals including a code owner, and
+resolution of review threads. It also blocks force pushes and branch deletion.
+The ruleset gives repository administrators an always-on bypass. Team members,
+including administrators, use the three-approval workflow.
 
-The default branch's `.github/CODEOWNERS` should contain:
-
-```text
-* @OrbisLumen @Booyean
-```
-
-Both maintainers need write access. Use two rulesets targeting `master`:
-
-| Rule | Settings | Bypass |
-| --- | --- | --- |
-| `Master review` | Require PR, one Code Owner approval, dismiss stale approvals, resolve discussions, block force pushes and deletion | None |
-| `Master maintainers` | `Restrict updates` only | The two named maintainers, `For pull requests only` |
-
-Do not bypass the entire Write role. Remove administrator `Always allow` from the
-review rule. If individual users cannot be selected, check official API support
-or use a maintainer team in an organization repository. Owners can still change rules.
-
-**Historical check on 2026-10-06, not live status:** PRs, one approval, Code Owner
-approval, resolved discussions, stale approval dismissal, and force-push/deletion
-blocks were enabled. CODEOWNERS was submitted in
-[PR #3](https://github.com/OrbisLumen/CNN-in-automatic-drive/pull/3), then pending merge.
-CODEOWNERS takes effect only after entering the target branch. Administrator
-`Always allow` remained; maintainer-only updates were not configured or verified.
-Editing this guide does not change remote rules.
-
-After configuration, verify that members can push task branches but cannot
-merge; maintainers can merge approved PRs but cannot merge unapproved PRs or push
-directly to the main branch.
+All five members are listed in [CODEOWNERS](../.github/CODEOWNERS) for every
+path. GitHub reads this file from the PR's base branch. A change to the owner
+list takes effect for PRs targeting `master` once it lands there.
 
 ## Common Issues
 

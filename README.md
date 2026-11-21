@@ -42,4 +42,4 @@ python -m pytest
 
 ## 小组协作
 
-从最新的 `origin/master` 建立任务分支，每项任务对应一个 PR。OrbisLumen、Booyean 负责审查与合并。详见 [协作规范](doc/collaboration.md) 和 [AGENTS.md](AGENTS.md)。
+从最新的 `origin/master` 建立任务分支，每项任务对应一个 PR。五名成员都可以审查 PR。合入 `master` 前，须获得作者以外至少三名成员的批准，并解决所有审查讨论。详见 [协作规范](doc/collaboration.md) 和 [AGENTS.md](AGENTS.md)。
