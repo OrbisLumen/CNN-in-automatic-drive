@@ -1,6 +1,6 @@
 # Jupyter Examples
 
-From `projl/proj/`, install the library in the notebook kernel's Python environment:
+From the repository root, install the library in the notebook kernel's Python environment:
 
 ```bash
 python -m pip install -e .

@@ -48,8 +48,8 @@ builtins dynamically. The handles remain alive for the interpreter's lifetime.
 
 ```powershell
 .\.venv\Scripts\python.exe -m pip check
-.\.venv\Scripts\python.exe -m pytest projl/proj/tests/integration/test_gpu.py -v
-.\.venv\Scripts\python.exe -m pytest projl/proj/tests -q
+.\.venv\Scripts\python.exe -m pytest tests/integration/test_gpu.py -v
+.\.venv\Scripts\python.exe -m pytest tests -q
 ```
 
 Confirm all eight GPU cases pass with no skips for GPU acceptance. Tests verify

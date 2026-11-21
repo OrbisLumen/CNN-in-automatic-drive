@@ -4,8 +4,10 @@ reference/
 # Local third-party tools and simulator binaries
 /tools/
 
-# Big data
+# Local datasets and training artifacts
 data/
+/models/
+/runs/
 draft/
 
 # Python
@@ -16,10 +18,10 @@ __pycache__/
 *.egg-info
 
 # Jupyter
-.ipynb_checkpoints/ 
+.ipynb_checkpoints/
 
 # Pycharm
 .idea
 
 ## Saved Model
-.npz
+*.npz

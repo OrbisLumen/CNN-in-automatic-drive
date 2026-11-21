@@ -1,49 +1,45 @@
 # CNN-in-automatic-drive
 
-CNN 自动驾驶课程仓库：实现 MyDeZero，并用于 DonkeyCar 仿真小车的训练与控制。
+本仓库对应进阶式挑战性综合项目 I。每学期单独建仓。第一学期的目标是实现深度学习框架 MyDeZero，并将它用于 DonkeyCar 仿真训练与控制。当前已有框架、测试和 Notebook 示例，小车接口与训练流程是下一步工作。
 
 ## 目录
 
-```text
-├── projl/       # 第一学期
-├── projll/      # 第二学期
-├── projlll/     # 第三学期
-├── doc/         # 环境与协作说明
-└── tools/       # 本机第三方源码、模拟器，不提交 Git
-```
+| 路径 | 用途 |
+| --- | --- |
+| `src/mydezero/` | 自动微分、网络层、模型、优化器与数据加载 |
+| `tests/` | 单元测试与集成测试 |
+| `examples/` | 自动微分、回归与神经网络 Notebook |
+| `request/` | 本学期任务书、中期与期末材料模板 |
+| `doc/` | [MyDeZero 文档](doc/mydezero/README.md)、[UML 设计稿](doc/uml/README.md)、环境与协作说明 |
+| `reference/`、`tools/` | 本地参考材料、第三方接口源码和模拟器，Git 忽略 |
 
-各学期按 `request/`（要求）、`reference/`（参考）、`proj/`（项目）、
-`work/`（作业）整理。开始任务前阅读对应要求及 [AGENTS.md](AGENTS.md)，改动限于相关学期。
+后续小车接口和可复用的训练代码放在 `src/` 下，与 `mydezero/` 并列。实验数据按原始和处理后分别放在 `data/raw/`、`data/processed/`，权重放在 `models/`，每次训练的日志和指标放在 `runs/`。这些本地产物目录按需创建。
 
 ## 安装与测试
 
-每台电脑使用一个根目录 `.venv`，供 MyDeZero 和小车控制共用。首次创建：
+从仓库根目录使用 Python 3.12 创建虚拟环境。
 
 ```bash
 # macOS / Linux
-python3 -m venv .venv
+python3.12 -m venv .venv
 source .venv/bin/activate
 ```
 
 ```powershell
 # Windows PowerShell
-python -m venv .venv
+py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
 
-先按[环境说明](doc/donkeycar-setup.md)下载 tools 中的固定版本源码与模拟器，再使用环境中的 Python 安装依赖和两个本地项目：
+按 [DonkeyCar 环境说明](doc/donkeycar-setup.md) 将固定版本的接口源码放到 `tools/gym-donkeycar/`，然后安装课程依赖并运行测试。
 
 ```bash
 python -m pip install -r requirements.txt
-python -m pytest projl/proj/tests
+python -m pytest
 ```
 
-环境基线为 Python 3.12，直接依赖版本见 `requirements.txt`；macOS 兼容性需单独验证。
-DonkeyCar 下载、安装及 Windows 无需激活环境的用法见 [环境说明](doc/donkeycar-setup.md)。
-MyDeZero 详情见 [项目 README](projl/proj/README.md)。
+只使用框架时，可以直接执行 `python -m pip install -e .`。Notebook 和测试使用上面的课程环境。模拟器联通检查见 [DonkeyCar 环境说明](doc/donkeycar-setup.md)，Windows NVIDIA 环境见 [CuPy 安装说明](doc/cupy-setup.md)。
 
 ## 小组协作
 
-有明确任务时，从最新的 `origin/master` 新建任务分支（如 `feat/donkeycar-autopilot`），一项任务对应一个 PR。审查通过并合并至 `master` 后，可清理任务分支。
-OrbisLumen、Booyean 负责审查与合并；具体操作及权限配置状态见 [协作规范](doc/collaboration.md)。
-个人环境、模拟器、数据和模型权重不提交 Git。
+从最新的 `origin/master` 建立任务分支，每项任务对应一个 PR。五名成员都可以审查 PR。合入 `master` 前，须获得作者以外至少三名成员的批准，并解决所有审查讨论。详见 [协作规范](doc/collaboration.md) 和 [AGENTS.md](AGENTS.md)。

@@ -8,8 +8,7 @@ python -m pytest tests -q
 
 Use the notebook's Python environment. Tests require NumPy, Matplotlib, and pytest.
 The rendering test requires system Graphviz and skips without `dot`.
-IPython supports notebook image display. The full suite contains **252 tests**,
-including parameterized cases.
+IPython supports notebook image display. Run `python -m pytest --collect-only -q` to list all cases, including optional GPU tests.
 
 ## Feature Coverage
 
@@ -54,7 +53,7 @@ run is outside the default suite. Automated training tests use small determinist
 data to check parameter updates and accuracy. Preview tests check image pixels and
 shape while replacing Matplotlib display calls. Graph rendering separately verifies
 a real PNG file. Optional GPU tests require CuPy and a CUDA device; see
-[GPU setup](../../../doc/cupy-setup.md) for installation and execution.
+[GPU setup](../cupy-setup.md) for installation and execution.
 `integration/test_gpu.py` checks CPU/GPU transfers, broadcast gradients,
 convolution and transposed-convolution outputs and input/weight/bias gradients,
 max/average pooling gradients, and classifier training with MomentumSGD.
