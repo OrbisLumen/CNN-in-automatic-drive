@@ -4,13 +4,25 @@
 
 1. Check the matching `request/` folder before starting an assignment.
 2. Use `reference/` for supporting materials and examples.
-3. Keep homework in the appropriate `work/` folder.
-4. Keep semester project files in `proj/`.
-5. Avoid changing files from another semester unless the task requires it.
+3. Keep course submissions in `work/` when needed.
+4. Keep library and application packages under `src/`, tests in `tests/`, and notebooks in `examples/`.
+5. Use one repository per semester. This repository covers Project I.
+   Support both macOS and Windows. Use portable paths and document platform-specific setup.
 6. When a change is requested, first analyze it and provide code suggestions before editing files.
 7. Keep changes and suggestions as simple as possible, and think twice before adding complexity.
 8. Keep changes narrowly scoped and avoid broad structural changes.
 9. Before editing for a new task, create a branch named for that task from the latest `origin/master`. Use one branch and one PR per task. Continue review fixes on the same branch.
+
+## MyDeZero
+
+- Keep implementations readable and close to the local DeZero reference. Document
+  expected inputs and use NumPy's normal behavior unless a check fixes a concrete
+  bug or the task requires it.
+- Keep docstrings concise. Put detailed examples, gradient conventions and
+  implementation comparisons in `doc/mydezero/`. Explain substantial documentation
+  additions before writing them.
+- Test behavior and correctness. When commits are requested, separate functionality,
+  tests and documentation, in that order.
 
 ## Testing Guidelines
 

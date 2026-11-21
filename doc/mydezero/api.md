@@ -2,7 +2,7 @@
 
 MyDeZero provides NumPy automatic differentiation and fully connected network training.
 `Function` subclasses implement operations; normally call their lowercase wrappers.
-See [usage](usage.md), [data](data.md), and [examples](../examples/README.md).
+See [usage](usage.md), [data](data.md), and [examples](../../examples/README.md).
 
 ## Core and Automatic Differentiation
 

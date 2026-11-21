@@ -9,12 +9,12 @@ Use the same Python and dependency versions on Windows and macOS, with the simul
 | --- | --- |
 | Third-party interface source | `tools/gym-donkeycar/` |
 | Simulator | `tools/donkey-sim/` |
-| Project code | The semester's `proj/` |
-| Requirements and templates | The semester's `request/` |
-| Software engineering reports and figures | The semester's `work/software-engineering/` (planned) |
+| Project code | `src/` |
+| Requirements and templates | `request/` |
+| Software engineering reports and figures | [MyDeZero UML](uml/README.md) and `work/software-engineering/` (planned reports) |
 
 Do not commit `tools/` or `.venv`. Store data, weights, and training outputs in ignored
-`data/` directories or shared storage. Record download links, checksums, and related
+`data/`, `models/`, and `runs/` directories or shared storage. Record download links, checksums, and related
 experiments in the repository. Avoid personal absolute simulator paths.
 
 Shared baseline:
@@ -77,7 +77,7 @@ Run from the repository root, using `.venv/bin/python` on macOS:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pip check
-.\.venv\Scripts\python.exe -m pytest projl/proj/tests -q
+.\.venv\Scripts\python.exe -m pytest tests -q
 .\.venv\Scripts\python.exe -m jupyter --version
 .\.venv\Scripts\python.exe -m jupyter lab
 ```
@@ -93,11 +93,13 @@ Graphviz is optional: install its system executable and add `dot` to `PATH` for
 computation-graph PNG rendering. Its integration test skips when `dot` is absent.
 GPU/CuPy and other training frameworks are outside this baseline.
 
-If macOS cannot launch the simulator because execute permission is missing:
+On macOS, locate the extracted app with `find tools/donkey-sim -name donkey_sim.app`.
+Use the returned path in the commands below. If execute permission is missing, restore it before launching:
 
 ```bash
-chmod u+x tools/donkey-sim/DonkeySimMac/donkey_sim.app/Contents/MacOS/donkey_sim
-open tools/donkey-sim/DonkeySimMac/donkey_sim.app
+sim_app="tools/donkey-sim/donkey_sim.app"  # Adjust for the archive layout.
+chmod u+x "$sim_app/Contents/MacOS/donkey_sim"
+open "$sim_app"
 ```
 
 ## Acceptance and Experiment Records

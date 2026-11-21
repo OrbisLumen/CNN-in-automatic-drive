@@ -40,7 +40,7 @@ Read the relevant `request/` and `AGENTS.md` before editing. Run relevant checks
 then commit selected files:
 
 ```bash
-python -m pytest projl/proj/tests
+python -m pytest tests
 git diff
 git add README.md
 git diff --cached

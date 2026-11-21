@@ -117,7 +117,7 @@ print(correct / total)
 
 Weight loss and accuracy by actual batch size, then divide by the evaluation
 sample count. Do not use the training count for test metrics.
-See the [MNIST example](../examples/neural_network/train_mnist_mlp.ipynb).
+See the [MNIST example](../../examples/neural_network/train_mnist_mlp.ipynb).
 
 ## Download Cache
 
